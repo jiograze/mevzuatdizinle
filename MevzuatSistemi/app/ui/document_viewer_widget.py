@@ -30,6 +30,7 @@ class DocumentViewerWidget(QWidget):
     document_deleted = pyqtSignal(int)  # Belge silindiğinde
     note_added = pyqtSignal(int, int, str)  # Nota eklendiğinde
     article_selected = pyqtSignal(int)  # Madde seçildiğinde
+    open_in_new_tab_requested = pyqtSignal(int)  # Yeni sekmede açma talebi
     
     def __init__(self, config=None, db=None):
         super().__init__()
@@ -97,6 +98,11 @@ class DocumentViewerWidget(QWidget):
         toolbar_layout.addWidget(self.export_button)
         toolbar_layout.addWidget(self.open_file_button)
         toolbar_layout.addStretch()
+        
+        # Yeni sekmede aç butonu (zoom kontrolleri yanında)
+        self.new_tab_button = QPushButton("📑 Yeni Sekmede Aç")
+        self.new_tab_button.clicked.connect(self.open_in_new_tab)
+        toolbar_layout.addWidget(self.new_tab_button)
         
         # Zoom kontrolleri
         zoom_label = QLabel("Zoom:")
@@ -732,6 +738,11 @@ class DocumentViewerWidget(QWidget):
             self.logger.error(f"Dosya açma hatası: {e}")
             QMessageBox.critical(self, "Hata", f"Dosya açılamadı:\n{e}")
     
+    def open_in_new_tab(self):
+        """Mevcut belgeyi yeni sekmede aç"""
+        if self.current_document_id:
+            self.open_in_new_tab_requested.emit(self.current_document_id)
+    
     def update_zoom(self, value):
         """Zoom seviyesini güncelle"""
         self.zoom_label.setText(f"{value}%")
@@ -767,6 +778,7 @@ class DocumentViewerWidget(QWidget):
         self.edit_button.setEnabled(has_document)
         self.delete_button.setEnabled(has_document)
         self.export_button.setEnabled(has_document)
+        self.new_tab_button.setEnabled(has_document)
         self.open_file_button.setEnabled(
             has_document and 
             self.current_document and 

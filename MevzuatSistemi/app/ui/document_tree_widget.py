@@ -19,6 +19,7 @@ class DocumentTreeWidget(QTreeWidget):
     """Belge ağacı widget'ı"""
     
     document_selected = pyqtSignal(dict)  # document_data
+    document_view_in_new_tab_requested = pyqtSignal(int)  # document_id
     
     def __init__(self, db):
         super().__init__()
@@ -299,6 +300,15 @@ class DocumentTreeWidget(QTreeWidget):
         menu = QMenu(self)
         
         if data.get("type") == "document":
+            # Belge görüntüleme işlemleri
+            view_action = menu.addAction("📖 Belge Görüntüle")
+            view_action.triggered.connect(lambda: self.document_selected.emit(data["id"]))
+            
+            new_tab_action = menu.addAction("📑 Yeni Sekmede Aç")
+            new_tab_action.triggered.connect(lambda: self.document_view_in_new_tab_requested.emit(data["id"]))
+            
+            menu.addSeparator()
+            
             # Belge işlemleri
             refresh_action = menu.addAction("🔄 Maddeleri Yenile")
             refresh_action.triggered.connect(lambda: self.refresh_document_articles(item, data["id"]))
@@ -476,6 +486,7 @@ class DocumentTreeContainer(QWidget):
     """Belge ağacı container widget'ı (arama özelliği ile)"""
     
     document_selected = pyqtSignal(dict)
+    document_view_in_new_tab_requested = pyqtSignal(int)  # document_id
     
     def __init__(self, db):
         super().__init__()
@@ -506,6 +517,7 @@ class DocumentTreeContainer(QWidget):
         # Ağaç widget'ı
         self.tree_widget = DocumentTreeWidget(self.db)
         self.tree_widget.document_selected.connect(self.document_selected)
+        self.tree_widget.document_view_in_new_tab_requested.connect(self.document_view_in_new_tab_requested)
         layout.addWidget(self.tree_widget)
         
         # Alt panel - istatistikler

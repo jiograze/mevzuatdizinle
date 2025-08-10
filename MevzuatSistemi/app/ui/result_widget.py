@@ -85,6 +85,7 @@ class ResultTableWidget(QTableWidget):
     result_selected = pyqtSignal(SearchResult)
     document_delete_requested = pyqtSignal(int)  # document_id
     document_view_requested = pyqtSignal(int)    # document_id
+    document_view_in_new_tab_requested = pyqtSignal(int)  # document_id for new tab
     
     def __init__(self):
         super().__init__()
@@ -241,6 +242,12 @@ class ResultTableWidget(QTableWidget):
         view_action = menu.addAction("📖 Belge Görüntüle")
         view_action.triggered.connect(lambda: self.view_document(result))
         
+        # Yeni sekmede aç
+        new_tab_action = menu.addAction("📑 Yeni Sekmede Aç")
+        new_tab_action.triggered.connect(lambda: self.view_document_in_new_tab(result))
+        
+        menu.addSeparator()
+        
         # Belge sil
         delete_action = menu.addAction("🗑️ Belgeyi Sil")
         delete_action.triggered.connect(lambda: self.delete_document(result))
@@ -275,6 +282,10 @@ class ResultTableWidget(QTableWidget):
     def view_document(self, result: SearchResult):
         """Belgeyi görüntüle"""
         self.document_view_requested.emit(result.document_id)
+    
+    def view_document_in_new_tab(self, result: SearchResult):
+        """Belgeyi yeni sekmede görüntüle"""
+        self.document_view_in_new_tab_requested.emit(result.document_id)
     
     def delete_document(self, result: SearchResult):
         """Belgeyi sil"""
@@ -329,6 +340,7 @@ class ResultWidget(QWidget):
     add_note_requested = pyqtSignal(SearchResult)
     document_delete_requested = pyqtSignal(int)  # Belge silme talebi
     document_view_requested = pyqtSignal(int)    # Belge görüntüleme talebi
+    document_view_in_new_tab_requested = pyqtSignal(int)  # Yeni sekmede belge görüntüleme talebi
     
     def __init__(self, db=None):
         super().__init__()
@@ -387,6 +399,7 @@ class ResultWidget(QWidget):
         self.table_widget.result_selected.connect(self.result_selected)
         self.table_widget.document_delete_requested.connect(self.document_delete_requested)
         self.table_widget.document_view_requested.connect(self.document_view_requested)
+        self.table_widget.document_view_in_new_tab_requested.connect(self.document_view_in_new_tab_requested)
         content_layout.addWidget(self.table_widget)
         
         # Liste görünümü (başlangıçta gizli)

@@ -1,6 +1,6 @@
 """
-Arama widget'ı - gelişmiş arama arayüzü
-BaseUIWidget'tan türetilmiş modern implementasyon
+Arama widget'ı - Modern UI ile gelişmiş arama arayüzü
+BaseUIWidget'tan türetilmiş ve modern bileşenlerle güncellenmiş implementasyon
 """
 
 import logging
@@ -19,9 +19,13 @@ from PyQt5.QtCore import (
 from PyQt5.QtGui import QFont
 
 from ..core.base import BaseUIWidget
+from .modern import (
+    MevzuatDesignSystem, ModernButton, SmartInput,
+    ButtonType, ButtonSize, InputState
+)
 
 class AdvancedSearchWidget(BaseUIWidget):
-    """Gelişmiş arama widget'ı - BaseUIWidget implementasyonu"""
+    """Gelişmiş arama widget'ı - Modern UI ile güncellenmiş BaseUIWidget implementasyonu"""
     
     # Signals
     search_requested = pyqtSignal(dict)
@@ -36,13 +40,25 @@ class AdvancedSearchWidget(BaseUIWidget):
         super().__init__(parent, config)
         self.logger = logging.getLogger(self.__class__.__name__)
         
+        # Modern UI desteği
+        self.design_system = MevzuatDesignSystem()
+        
         # Initialize UI components
         self._create_widgets()
         self._setup_layouts()
         self._connect_signals()
+        self._apply_modern_styles()
+    
+    def _apply_modern_styles(self):
+        """Modern stilleri uygula"""
+        self.setStyleSheet(f"""
+        AdvancedSearchWidget {{
+            background-color: {self.design_system.tokens.surface if self.design_system.tokens else '#FFFFFF'};
+            border-radius: 8px;
+            padding: 16px;
+        }}
+        """)
         
-    def _create_widgets(self):
-        """BaseUIWidget abstract method - create UI widgets"""
     def _create_widgets(self):
         """BaseUIWidget abstract method - create UI widgets"""
         layout = QVBoxLayout(self)
@@ -157,8 +173,8 @@ class SearchWidget(BaseUIWidget):
     
     search_requested = pyqtSignal(str, str)  # query, search_type
     
-    def __init__(self, search_engine):
-        super().__init__()
+    def __init__(self, search_engine, parent=None, config=None):
+        super().__init__(parent, config)
         self.search_engine = search_engine
         self.logger = logging.getLogger(self.__class__.__name__)
         
@@ -174,24 +190,16 @@ class SearchWidget(BaseUIWidget):
         # Otomatik tamamlama
         self.completer_model = QStringListModel()
         
-        self.init_ui()
-        
-    def init_ui(self):
-        """UI bileşenlerini oluştur"""
-        layout = QVBoxLayout(self)
-        
+        # BaseUIWidget init_ui zaten çağrıldı, ekstra init_ui çağırmayacağız
+    
+    def _create_widgets(self):
+        """BaseUIWidget abstract method - create UI widgets"""
         # Ana arama grubu
-        search_group = QGroupBox("Arama")
-        search_layout = QVBoxLayout(search_group)
-        
-        # Arama çubuğu
-        search_bar_layout = QHBoxLayout()
+        self.search_group = QGroupBox("Arama")
         
         # Arama kutusu
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Arama terimini girin... (örn: vergi, mülkiyet, TCK madde 123)")
-        self.search_input.returnPressed.connect(self.perform_search)
-        self.search_input.textChanged.connect(self.on_text_changed)
         
         # Otomatik tamamlama ayarla
         completer = QCompleter()
@@ -200,75 +208,49 @@ class SearchWidget(BaseUIWidget):
         completer.setCaseSensitivity(Qt.CaseInsensitive)
         self.search_input.setCompleter(completer)
         
-        search_bar_layout.addWidget(self.search_input)
-        
         # Arama butonu
-        search_btn = QPushButton("Ara")
-        search_btn.clicked.connect(self.perform_search)
-        search_btn.setDefault(True)
-        search_bar_layout.addWidget(search_btn)
+        self.search_btn = QPushButton("Ara")
+        self.search_btn.setDefault(True)
         
-        search_layout.addLayout(search_bar_layout)
-        
-        # Arama türü seçenekleri
-        search_type_layout = QHBoxLayout()
-        
-        # Arama türü başlığı
-        search_type_layout.addWidget(QLabel("Arama türü:"))
-        
-        # Radio butonları
+        # Arama türü radio butonları
         self.search_type_group = QButtonGroup()
         
         self.keyword_radio = QRadioButton("Anahtar kelime")
         self.semantic_radio = QRadioButton("Semantik")
         self.mixed_radio = QRadioButton("Karma (önerilen)")
-        
         self.mixed_radio.setChecked(True)
         
         self.search_type_group.addButton(self.keyword_radio, 0)
         self.search_type_group.addButton(self.semantic_radio, 1)
         self.search_type_group.addButton(self.mixed_radio, 2)
         
-        search_type_layout.addWidget(self.keyword_radio)
-        search_type_layout.addWidget(self.semantic_radio)
-        search_type_layout.addWidget(self.mixed_radio)
-        search_type_layout.addStretch()
-        
-        search_layout.addLayout(search_type_layout)
-        
-        # Arama seçenekleri
-        options_layout = QHBoxLayout()
-        
         # Benzerlik eşiği
-        options_layout.addWidget(QLabel("Benzerlik eşiği:"))
         self.similarity_slider = QSlider(Qt.Horizontal)
         self.similarity_slider.setMinimum(1)
         self.similarity_slider.setMaximum(10)
-        self.similarity_slider.setValue(6)  # 0.6
-        self.similarity_slider.valueChanged.connect(self.update_similarity_label)
-        options_layout.addWidget(self.similarity_slider)
+        self.similarity_slider.setValue(6)
         
         self.similarity_label = QLabel("0.6")
-        self.similarity_label.setMinimumWidth(30)
-        options_layout.addWidget(self.similarity_label)
         
-        options_layout.addStretch()
-        
-        # Maksimum sonuç
-        options_layout.addWidget(QLabel("Maksimum sonuç:"))
+        # Max sonuç sayısı
         self.max_results_spin = QSpinBox()
-        self.max_results_spin.setMinimum(10)
-        self.max_results_spin.setMaximum(1000)
-        self.max_results_spin.setValue(100)
-        options_layout.addWidget(self.max_results_spin)
+        self.max_results_spin.setRange(10, 1000)
+        self.max_results_spin.setValue(50)
         
-        search_layout.addLayout(options_layout)
+        # Gelişmiş arama toggle
+        self.advanced_toggle_btn = QPushButton("🔽 Gelişmiş Arama")
         
-        layout.addWidget(search_group)
+        # Gelişmiş arama widget'ı (lazy loading)
+        self.advanced_widget = None
         
-        # Hızlı filtreler
-        quick_filters_group = QGroupBox("Hızlı Filtreler")
-        quick_filters_layout = QHBoxLayout(quick_filters_group)
+        # Öneri grubu
+        self.suggestions_group = QGroupBox("Öneriler")
+        self.suggestions_group.setVisible(False)
+        self.suggestions_layout = QVBoxLayout(self.suggestions_group)
+        
+        # Hızlı arama butonları
+        self.quick_search_group = QGroupBox("Hızlı Arama")
+        self.quick_search_layout = QHBoxLayout(self.quick_search_group)
         
         # Popüler arama terimleri
         quick_terms = ["vergi", "mülkiyet", "ceza", "ticaret", "iş hukuku", "sosyal güvenlik"]
@@ -287,36 +269,73 @@ class SearchWidget(BaseUIWidget):
                     background-color: #e0e0e0;
                 }
             """)
-            quick_filters_layout.addWidget(btn)
+            self.quick_search_layout.addWidget(btn)
         
-        quick_filters_layout.addStretch()
-        layout.addWidget(quick_filters_group)
+        self.quick_search_layout.addStretch()
         
-        # Gelişmiş arama (başlangıçta gizli)
-        self.advanced_widget = AdvancedSearchWidget()
-        self.advanced_widget.setVisible(False)
-        layout.addWidget(self.advanced_widget)
+    def _setup_layouts(self):
+        """BaseUIWidget abstract method - setup layouts"""
+        # Ana layout zaten main_layout olarak oluşturuldu
+        
+        # Arama grubu layout
+        search_layout = QVBoxLayout(self.search_group)
+        
+        # Arama çubuğu layout
+        search_bar_layout = QHBoxLayout()
+        search_bar_layout.addWidget(self.search_input)
+        search_bar_layout.addWidget(self.search_btn)
+        search_layout.addLayout(search_bar_layout)
+        
+        # Arama türü layout
+        search_type_layout = QHBoxLayout()
+        search_type_layout.addWidget(QLabel("Arama türü:"))
+        search_type_layout.addWidget(self.keyword_radio)
+        search_type_layout.addWidget(self.semantic_radio)
+        search_type_layout.addWidget(self.mixed_radio)
+        search_type_layout.addStretch()
+        search_layout.addLayout(search_type_layout)
+        
+        # Arama seçenekleri layout
+        options_layout = QHBoxLayout()
+        options_layout.addWidget(QLabel("Benzerlik eşiği:"))
+        options_layout.addWidget(self.similarity_slider)
+        options_layout.addWidget(self.similarity_label)
+        options_layout.addStretch()
+        options_layout.addWidget(QLabel("Max sonuç:"))
+        options_layout.addWidget(self.max_results_spin)
+        search_layout.addLayout(options_layout)
         
         # Gelişmiş arama toggle
-        toggle_layout = QHBoxLayout()
-        self.advanced_toggle_btn = QPushButton("🔽 Gelişmiş Arama")
+        search_layout.addWidget(self.advanced_toggle_btn)
+        
+        # Ana layout'a ekle
+        self.main_layout.addWidget(self.search_group)
+        self.main_layout.addWidget(self.suggestions_group)
+        self.main_layout.addWidget(self.quick_search_group)
+        self.main_layout.addWidget(self.advanced_widget)
+        self.main_layout.addStretch()
+        
+    def _connect_signals(self):
+        """BaseUIWidget abstract method - connect signals"""
+        self.search_input.returnPressed.connect(self.perform_search)
+        self.search_input.textChanged.connect(self.on_text_changed)
+        self.search_btn.clicked.connect(self.perform_search)
+        self.similarity_slider.valueChanged.connect(self.update_similarity_label)
         self.advanced_toggle_btn.clicked.connect(self.toggle_advanced_search)
-        toggle_layout.addWidget(self.advanced_toggle_btn)
-        toggle_layout.addStretch()
         
-        layout.addLayout(toggle_layout)
+        if hasattr(self.advanced_widget, 'search_requested'):
+            self.advanced_widget.search_requested.connect(self.on_advanced_search)
         
-        # Önerilen sorgular (dinamik)
-        self.suggestions_group = QGroupBox("Önerilen Sorgular")
-        self.suggestions_layout = QHBoxLayout(self.suggestions_group)
-        self.suggestions_group.setVisible(False)
-        layout.addWidget(self.suggestions_group)
-        
-        # Separator
-        separator = QFrame()
-        separator.setFrameShape(QFrame.HLine)
-        separator.setFrameShadow(QFrame.Sunken)
-        layout.addWidget(separator)
+    def init_ui(self):
+        """Legacy init_ui method - şimdi BaseUIWidget tarafından yönetiliyor"""
+        pass
+    
+    def on_advanced_search(self, search_params):
+        """Gelişmiş aramadan gelen sinyal"""
+        # Gelişmiş arama parametrelerini işle
+        if search_params.get('all_words'):
+            self.search_input.setText(search_params['all_words'])
+            self.perform_search()
     
     def perform_search(self):
         """Arama gerçekleştir"""
@@ -347,6 +366,10 @@ class SearchWidget(BaseUIWidget):
         """Metin değiştiğinde"""
         # Önerileri yükle (debounce ile)
         self.suggestion_timer.stop()
+        if text.strip():
+            self.suggestion_timer.start(500)  # 500ms bekle
+        else:
+            self.suggestions_group.setVisible(False)
         if len(text) > 2:
             self.suggestion_timer.start(500)  # 500ms bekle
         else:
@@ -489,3 +512,32 @@ class SearchWidget(BaseUIWidget):
         """Arama kutusuna odaklan"""
         self.search_input.setFocus()
         self.search_input.selectAll()
+
+    def toggle_advanced_search(self):
+        """Gelişmiş aramayı aç/kapat"""
+        if self.advanced_widget is None:
+            # Lazy loading - ilk açılışta oluştur
+            self.advanced_widget = AdvancedSearchWidget(self, self.config)
+            self.advanced_widget.search_requested.connect(self.on_advanced_search)
+            # Ana layout'a ekle
+            if hasattr(self, 'main_layout'):
+                self.main_layout.insertWidget(3, self.advanced_widget)  # quick_search_group'tan önce
+        
+        is_visible = self.advanced_widget.isVisible()
+        self.advanced_widget.setVisible(not is_visible)
+        
+        if is_visible:
+            self.advanced_toggle_btn.setText("🔽 Gelişmiş Arama")
+        else:
+            self.advanced_toggle_btn.setText("🔼 Gelişmiş Arama")
+
+    def set_suggestion(self, suggestion: str):
+        """Öneriyi seç"""
+        self.search_input.setText(suggestion)
+        self.suggestions_group.setVisible(False)
+        self.perform_search()
+    
+    def set_quick_search(self, term: str):
+        """Hızlı arama terimi seç"""
+        self.search_input.setText(term)
+        self.perform_search()

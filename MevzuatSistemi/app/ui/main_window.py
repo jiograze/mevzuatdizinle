@@ -1,5 +1,6 @@
 """
-Ana pencere - PyQt5 tabanlı kullanıcı arayüzü
+Ana pencere - Modern PyQt5 tabanlı kullanıcı arayüzü
+Responsive tasarım ve modern bileşenlerle güncellenmiş ana uygulama penceresi
 """
 
 import sys
@@ -23,6 +24,13 @@ from PyQt5.QtCore import (
 )
 from PyQt5.QtGui import (
     QIcon, QFont, QPixmap, QPalette, QColor, QDragEnterEvent, QDropEvent
+)
+
+# Modern UI bileşenleri
+from .modern import (
+    MevzuatDesignSystem, ColorScheme, AdvancedThemeManager,
+    ResponsiveManager, ModernButton, ModernCard, ResponsiveGrid,
+    ButtonType, ButtonSize
 )
 
 from .search_widget import SearchWidget
@@ -74,7 +82,7 @@ class FileWatcherStatus(QWidget):
         self.queue_info.setText(f"Queue: {queue_size}")
 
 class MainWindow(QMainWindow):
-    """Ana uygulama penceresi"""
+    """Ana uygulama penceresi - Modern UI ile güncellenmiş"""
     
     def __init__(self, config, db, search_engine, document_processor, file_watcher):
         super().__init__()
@@ -86,9 +94,18 @@ class MainWindow(QMainWindow):
         self.file_watcher = file_watcher
         self.logger = logging.getLogger(self.__class__.__name__)
         
+        # Modern UI sistemi başlat
+        self.design_system = MevzuatDesignSystem()
+        self.design_system.apply_theme(ColorScheme.LIGHT_PROFESSIONAL)  # Tema uygula
+        self.theme_manager = AdvancedThemeManager(self.design_system)  # design_system objesini geç
+        self.responsive_manager = ResponsiveManager()
+        
         # UI state
         self.last_search_results: List[SearchResult] = []
         self.current_document = None
+        
+        # Modern UI bileşenleri
+        self.modern_components = {}
         
         # Timers
         self.status_update_timer = QTimer()
@@ -98,16 +115,19 @@ class MainWindow(QMainWindow):
         # Drag & Drop desteği
         self.setAcceptDrops(True)
         
-        self.init_ui()
+        # Responsive davranış
+        self.responsive_manager.breakpoint_changed.connect(self.on_breakpoint_changed)
+        
+        self.init_modern_ui()
         self.load_settings()
         
         # Favoriler listesini yükle
         self.refresh_favorites()
         
-        self.logger.info("Ana pencere başlatıldı")
+        self.logger.info("Ana pencere başlatıldı - Modern UI aktif")
     
-    def init_ui(self):
-        """UI bileşenlerini oluştur"""
+    def init_modern_ui(self):
+        """Modern UI bileşenlerini oluştur"""
         self.setWindowTitle("Mevzuat Belge Analiz & Sorgulama Sistemi v1.0.2")
         self.setGeometry(100, 100, 1400, 800)
         
@@ -115,41 +135,212 @@ class MainWindow(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         
-        # Ana layout
-        main_layout = QVBoxLayout(central_widget)
+        # Modern responsive layout
+        self.main_grid = ResponsiveGrid(central_widget)
         
         # Menu bar
-        self.create_menu_bar()
+        self.create_modern_menu_bar()
         
         # Toolbar
-        self.create_toolbar()
+        self.create_modern_toolbar()
         
-        # Ana içerik alanı
-        content_splitter = QSplitter(Qt.Horizontal)
-        main_layout.addWidget(content_splitter)
-        
-        # Sol panel
-        left_panel = self.create_left_panel()
-        content_splitter.addWidget(left_panel)
-        
-        # Orta panel (arama ve sonuçlar)
-        middle_panel = self.create_middle_panel()
-        content_splitter.addWidget(middle_panel)
-        
-        # Sağ panel (detaylar)
-        right_panel = self.create_right_panel()
-        content_splitter.addWidget(right_panel)
-        
-        # Splitter oranları
-        content_splitter.setSizes([300, 700, 400])
+        # Ana içerik kartları
+        self.create_modern_layout()
         
         # Status bar
-        self.create_status_bar()
+        self.create_modern_status_bar()
         
-        # Stil uygula
-        self.apply_theme()
+        # Modern tema uygula
+        self.apply_modern_theme()
+        
+    def create_modern_layout(self):
+        """Modern responsive layout oluştur"""
+        # Sol panel - Belge ağacı ve filtreler
+        left_card = ModernCard("Belgeler ve Filtreler")
+        left_panel = self.create_modern_left_panel()
+        left_card.set_content(left_panel)
+        
+        # Orta panel - Arama ve sonuçlar
+        middle_card = ModernCard("Arama ve Sonuçlar")
+        middle_panel = self.create_modern_middle_panel()
+        middle_card.set_content(middle_panel)
+        
+        # Sağ panel - Detaylar
+        right_card = ModernCard("Belge Detayları")
+        right_panel = self.create_modern_right_panel()
+        right_card.set_content(right_panel)
+        
+        # Responsive grid'e ekle
+        self.main_grid.add_widget(left_card, 0, 0, 1, 1)    # Sol
+        self.main_grid.add_widget(middle_card, 0, 1, 1, 2)  # Orta (2 kolon)
+        self.main_grid.add_widget(right_card, 0, 3, 1, 1)   # Sağ
+        
+        # Modern bileşenleri sakla
+        self.modern_components.update({
+            'left_card': left_card,
+            'middle_card': middle_card, 
+            'right_card': right_card,
+            'main_grid': self.main_grid
+        })
     
-    def create_menu_bar(self):
+    def on_breakpoint_changed(self, breakpoint):
+        """Responsive breakpoint değiştiğinde layout'u ayarla"""
+        if hasattr(self, 'main_grid') and self.main_grid:
+            if breakpoint in ['mobile', 'tablet']:
+                # Mobil/tablet için stacked layout
+                self.main_grid.stack_layout()
+            else:
+                # Desktop için yan yana layout
+                self.main_grid.grid_layout_mode()
+    
+    def create_modern_menu_bar(self):
+        """Modern menu çubuğunu oluştur"""
+        menubar = self.menuBar()
+        
+        # Modern stil uygula
+        menubar.setStyleSheet(self.theme_manager.get_menu_styles())
+        
+        # Dosya menüsü
+        file_menu = menubar.addMenu('📁 Dosya')
+        
+        # Belge ekleme seçenekleri
+        add_files_action = QAction('➕ Dosya Seçerek Belge Ekle', self)
+        add_files_action.setShortcut('Ctrl+O')
+        add_files_action.setStatusTip('Bilgisayarınızdan dosya seçerek mevzuat belgesi ekleyin')
+        add_files_action.triggered.connect(self.select_and_process_files)
+        file_menu.addAction(add_files_action)
+        
+        # Raw klasör tarama
+        scan_action = QAction('🔍 Raw Klasörü Tara', self)
+        scan_action.setStatusTip('Raw klasöründeki işlenmemiş dosyaları sistem otomatik tarar')
+        scan_action.triggered.connect(self.scan_raw_folder)
+        file_menu.addAction(scan_action)
+        
+        file_menu.addSeparator()
+        
+        # Dışa aktar
+        export_action = QAction('📄 PDF Rapor Oluştur', self)
+        export_action.setShortcut('Ctrl+E')
+        export_action.triggered.connect(self.export_results)
+        file_menu.addAction(export_action)
+        
+        file_menu.addSeparator()
+        
+        # Çıkış
+        exit_action = QAction('🚪 Çıkış', self)
+        exit_action.setShortcut('Ctrl+Q')
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+        
+        # Belge yönetimi menüsü
+        document_menu = menubar.addMenu('📄 Belge Yönetimi')
+        
+        # Belge listesi
+        list_docs_action = QAction('📋 Tüm Belgeler', self)
+        list_docs_action.setStatusTip('Sistemdeki tüm belgeleri listeler')
+        list_docs_action.triggered.connect(self.show_all_documents)
+        document_menu.addAction(list_docs_action)
+        
+        document_menu.addSeparator()
+        
+        # Belge bakımı
+        check_docs_action = QAction('🔍 Eksik Belgeleri Kontrol Et', self)
+        check_docs_action.setStatusTip('Veritabanında kayıtlı ama dosyası eksik olan belgeleri bulur')
+        check_docs_action.triggered.connect(self.check_missing_documents)
+        document_menu.addAction(check_docs_action)
+        
+        # Araçlar menüsü
+        tools_menu = menubar.addMenu('🔧 Araçlar')
+        
+        # İndeks yeniden oluştur
+        rebuild_index_action = QAction('🔄 Semantik İndeksi Yeniden Oluştur', self)
+        rebuild_index_action.setStatusTip('Tüm belgeler için arama indeksini yeniden oluşturur')
+        rebuild_index_action.triggered.connect(self.rebuild_semantic_index)
+        tools_menu.addAction(rebuild_index_action)
+        
+        # Veritabanı bakımı
+        vacuum_action = QAction('🗂️ Veritabanı Bakımı', self)
+        vacuum_action.setStatusTip('Veritabanını optimize eder ve gereksiz alanları temizler')
+        vacuum_action.triggered.connect(self.vacuum_database)
+        tools_menu.addAction(vacuum_action)
+        
+        tools_menu.addSeparator()
+        
+        # Ayarlar
+        settings_action = QAction('⚙️ Ayarlar', self)
+        settings_action.setShortcut('Ctrl+,')
+        settings_action.triggered.connect(self.open_settings)
+        tools_menu.addAction(settings_action)
+        
+        # Yardım menüsü
+        help_menu = menubar.addMenu('❓ Yardım')
+        
+        # Kullanım Kılavuzu
+        help_action = QAction('📚 Kullanım Kılavuzu', self)
+        help_action.setShortcut('F1')
+        help_action.triggered.connect(self.show_help)
+        help_menu.addAction(help_action)
+        
+        help_menu.addSeparator()
+        
+        # Hakkında
+        about_action = QAction('ℹ️ Hakkında', self)
+        about_action.triggered.connect(self.show_about)
+        help_menu.addAction(about_action)
+    
+    def create_modern_toolbar(self):
+        """Modern toolbar oluştur"""
+        toolbar = self.addToolBar('Ana Araçlar')
+        toolbar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        toolbar.setStyleSheet(self.design_system.get_toolbar_styles())
+        
+        # Modern butonları oluştur
+        add_files_btn = ModernButton(
+            "📄 Belge Ekle",
+            ButtonType.PRIMARY,
+            ButtonSize.MEDIUM
+        )
+        add_files_btn.setToolTip('Dosya seçerek yeni belge ekle (Ctrl+O)')
+        add_files_btn.clicked.connect(self.select_and_process_files)
+        toolbar.addWidget(add_files_btn)
+        
+        scan_btn = ModernButton(
+            "🔍 Raw Tara", 
+            ButtonType.SECONDARY,
+            ButtonSize.MEDIUM
+        )
+        scan_btn.setToolTip('Raw klasörünü otomatik tara')
+        scan_btn.clicked.connect(self.scan_raw_folder)
+        toolbar.addWidget(scan_btn)
+        
+        toolbar.addSeparator()
+        
+        rebuild_btn = ModernButton(
+            "🔄 İndeksi Yenile",
+            ButtonType.ACCENT,
+            ButtonSize.MEDIUM
+        )
+        rebuild_btn.setToolTip('Arama indeksini yeniden oluştur')
+        rebuild_btn.clicked.connect(self.rebuild_semantic_index)
+        toolbar.addWidget(rebuild_btn)
+        
+        toolbar.addSeparator()
+        
+        settings_btn = ModernButton(
+            "⚙️ Ayarlar",
+            ButtonType.TERTIARY,
+            ButtonSize.MEDIUM
+        )
+        settings_btn.clicked.connect(self.open_settings)
+        toolbar.addWidget(settings_btn)
+        
+        # Modern bileşenleri sakla
+        self.modern_components.update({
+            'toolbar_add_files': add_files_btn,
+            'toolbar_scan': scan_btn,
+            'toolbar_rebuild': rebuild_btn,
+            'toolbar_settings': settings_btn
+        })
         """Menu çubuğunu oluştur"""
         menubar = self.menuBar()
         
@@ -282,6 +473,7 @@ class MainWindow(QMainWindow):
         # Belge ağacı
         self.document_tree = DocumentTreeContainer(self.db)
         self.document_tree.document_selected.connect(self.on_document_selected)
+        self.document_tree.document_view_in_new_tab_requested.connect(self.view_document)
         layout.addWidget(self.document_tree)
         
         # Filtre grubu
@@ -353,7 +545,7 @@ class MainWindow(QMainWindow):
         classic_layout = QVBoxLayout(classic_search_tab)
         
         # Arama widget'ı
-        self.search_widget = SearchWidget(self.search_engine)
+        self.search_widget = SearchWidget(self.search_engine, parent=self, config=self.config)
         self.search_widget.search_requested.connect(self.perform_search)
         classic_layout.addWidget(self.search_widget)
         
@@ -378,6 +570,7 @@ class MainWindow(QMainWindow):
         self.result_widget.add_note_requested.connect(self.add_note_to_article)
         self.result_widget.document_delete_requested.connect(self.delete_document)
         self.result_widget.document_view_requested.connect(self.view_document)
+        self.result_widget.document_view_in_new_tab_requested.connect(self.view_document)  # Aynı fonksiyon kullanılabilir
         classic_layout.addWidget(self.result_widget)
         
         self.search_tab_widget.addTab(classic_search_tab, "Klasik Arama")
@@ -435,16 +628,24 @@ class MainWindow(QMainWindow):
         
         tab_widget.addTab(detail_tab, "Detay")
         
-        # Belge görüntüleme sekmesi
-        self.document_viewer = DocumentViewerWidget(self.db)
+        # Belge görüntüleme sekmesi (varsayılan)
+        self.document_viewer = DocumentViewerWidget(self.config, self.db)
         self.document_viewer.document_updated.connect(self.refresh_all)
         self.document_viewer.document_deleted.connect(self.on_document_deleted)
         self.document_viewer.note_added.connect(self.refresh_all)
+        self.document_viewer.open_in_new_tab_requested.connect(self.view_document)
         tab_widget.addTab(self.document_viewer, "Belge Görüntüleme")
         
         # İstatistik sekmesi
         self.stats_widget = StatsWidget(self.db, self.search_engine)
         tab_widget.addTab(self.stats_widget, "İstatistikler")
+        
+        # Tab widget'ı sınıf değişkeni olarak sakla
+        self.right_panel_tabs = tab_widget
+        
+        # Sekme kapama özelliği
+        tab_widget.setTabsClosable(True)
+        tab_widget.tabCloseRequested.connect(self.close_document_tab)
         
         layout.addWidget(tab_widget)
         
@@ -1411,21 +1612,71 @@ class MainWindow(QMainWindow):
             self.logger.error(f"Belge silme hatası: {e}")
             QMessageBox.critical(self, "Hata", f"Belge silinirken hata oluştu:\n{e}")
     
-    def view_document(self, document_id: int):
-        """Belgeyi görüntüle"""
+    def close_document_tab(self, index: int):
+        """Belge sekmesini kapat"""
         try:
-            # Belge görüntüleme sekmesini aktif et
-            right_panel_tabs = self.findChild(QTabWidget)  # Sağ paneldeki tab widget
-            if right_panel_tabs:
-                for i in range(right_panel_tabs.count()):
-                    if right_panel_tabs.tabText(i) == "Belge Görüntüleme":
-                        right_panel_tabs.setCurrentIndex(i)
-                        break
+            # Varsayılan sekmeleri kapatmaya izin verme (index 0, 1, 2 -> Detay, Belge Görüntüleme, İstatistikler)
+            if index < 3:
+                return
             
-            # DocumentViewer'a belgeyi yükle
-            self.document_viewer.load_document(document_id)
+            # Widget'ı al ve temizle
+            widget = self.right_panel_tabs.widget(index)
+            if widget and isinstance(widget, DocumentViewerWidget):
+                document_id = getattr(widget, 'current_document_id', None)
+                self.logger.info(f"Belge sekmesi kapatıldı: {document_id}")
+                widget.clear_document()
+                widget.deleteLater()
             
-            self.logger.info(f"Belge görüntülendi: {document_id}")
+            # Sekmeyi kaldır
+            self.right_panel_tabs.removeTab(index)
+            
+        except Exception as e:
+            self.logger.error(f"Sekme kapatma hatası: {e}")
+    
+    def view_document(self, document_id: int):
+        """Belgeyi yeni sekmede görüntüle"""
+        try:
+            # Belge bilgilerini al
+            document = self.db.get_document(document_id)
+            if not document:
+                QMessageBox.warning(self, "Hata", f"Belge bulunamadı: ID {document_id}")
+                return
+            
+            # Aynı belge zaten açık mı kontrol et
+            for i in range(self.right_panel_tabs.count()):
+                tab_widget = self.right_panel_tabs.widget(i)
+                if isinstance(tab_widget, DocumentViewerWidget) and hasattr(tab_widget, 'current_document_id'):
+                    if tab_widget.current_document_id == document_id:
+                        # Aynı belge zaten açık, o sekmeyi aktif et
+                        self.right_panel_tabs.setCurrentIndex(i)
+                        self.logger.info(f"Belge zaten açık, sekme aktif edildi: {document_id}")
+                        return
+            
+            # Yeni DocumentViewerWidget oluştur
+            new_viewer = DocumentViewerWidget(self.config, self.db)
+            new_viewer.document_updated.connect(self.refresh_all)
+            new_viewer.document_deleted.connect(self.on_document_deleted)
+            new_viewer.note_added.connect(self.refresh_all)
+            
+            # Belgeyi yükle
+            if new_viewer.load_document(document_id):
+                # Sekme başlığını hazırla
+                doc_title = document.get('title', f'Belge #{document_id}')
+                if len(doc_title) > 30:
+                    doc_title = doc_title[:27] + "..."
+                
+                # Yeni sekme ekle
+                tab_index = self.right_panel_tabs.addTab(new_viewer, f"📄 {doc_title}")
+                self.right_panel_tabs.setCurrentIndex(tab_index)
+                
+                # Tab'a tooltip ekle
+                self.right_panel_tabs.setTabToolTip(tab_index, document.get('title', ''))
+                
+                self.logger.info(f"Belge yeni sekmede açıldı: {document_id}")
+            else:
+                # Yükleme başarısız olduysa widget'ı temizle
+                new_viewer.deleteLater()
+                QMessageBox.critical(self, "Hata", "Belge yüklenirken hata oluştu!")
             
         except Exception as e:
             self.logger.error(f"Belge görüntüleme hatası: {e}")
@@ -1505,3 +1756,180 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.logger.error(f"Eksik belge kontrolü hatası: {e}")
             QMessageBox.critical(self, "Hata", f"Eksik belge kontrolü yapılamadı:\n{e}")
+    
+    # Modern UI methodları
+    def create_modern_left_panel(self) -> QWidget:
+        """Modern sol panel - belge ağacı ve filtreler"""
+        panel = QWidget()
+        layout = QVBoxLayout(panel)
+        layout.setSpacing(self.design_system.tokens.spacing.md)
+        
+        # Belge ağacı container'ı
+        tree_card = ModernCard("Belgeler")
+        self.document_tree = DocumentTreeContainer(self.db)
+        self.document_tree.document_selected.connect(self.on_document_selected)
+        self.document_tree.document_view_in_new_tab_requested.connect(self.view_document)
+        tree_card.set_content(self.document_tree)
+        layout.addWidget(tree_card)
+        
+        # Filtreler kartı
+        filter_card = ModernCard("Filtreler")
+        filter_panel = QWidget()
+        filter_layout = QVBoxLayout(filter_panel)
+        filter_layout.setSpacing(self.design_system.tokens.spacing.sm)
+        
+        # Belge türü filtresi
+        type_label = QLabel("Belge Türü:")
+        type_label.setStyleSheet(self.design_system.get_text_styles('caption'))
+        filter_layout.addWidget(type_label)
+        
+        self.document_type_combo = QComboBox()
+        self.document_type_combo.addItems([
+            "Tümü", "ANAYASA", "KANUN", "KHK", "TÜZÜK", 
+            "YÖNETMELİK", "YÖNERGE", "TEBLİĞ", "KARAR"
+        ])
+        self.document_type_combo.setStyleSheet(self.design_system.get_input_styles())
+        self.document_type_combo.currentTextChanged.connect(self.on_filter_changed)
+        filter_layout.addWidget(self.document_type_combo)
+        
+        # Modern checkbox'lar
+        self.include_repealed_checkbox = QCheckBox("Mülga maddeleri dahil et")
+        self.include_repealed_checkbox.setStyleSheet(self.design_system.get_checkbox_styles())
+        self.include_repealed_checkbox.toggled.connect(self.on_filter_changed)
+        filter_layout.addWidget(self.include_repealed_checkbox)
+        
+        self.include_amended_checkbox = QCheckBox("Değişiklik içerenleri göster")
+        self.include_amended_checkbox.setChecked(True)
+        self.include_amended_checkbox.setStyleSheet(self.design_system.get_checkbox_styles())
+        self.include_amended_checkbox.toggled.connect(self.on_filter_changed)
+        filter_layout.addWidget(self.include_amended_checkbox)
+        
+        filter_card.set_content(filter_panel)
+        layout.addWidget(filter_card)
+        
+        return panel
+    
+    def create_modern_middle_panel(self) -> QWidget:
+        """Modern orta panel - arama ve sonuçlar"""
+        panel = QWidget()
+        layout = QVBoxLayout(panel)
+        layout.setSpacing(self.design_system.tokens.spacing.md)
+        
+        # Arama kartı
+        search_card = ModernCard("Arama")
+        self.search_widget = SearchWidget(self.db, self.search_engine, self.config)
+        self.search_widget.search_completed.connect(self.on_search_completed)
+        search_card.set_content(self.search_widget)
+        layout.addWidget(search_card)
+        
+        # Sonuçlar kartı
+        results_card = ModernCard("Sonuçlar")
+        self.result_widget = ResultWidget(self.db)
+        self.result_widget.document_selected.connect(self.on_document_selected)
+        self.result_widget.document_requested.connect(self.view_document)
+        results_card.set_content(self.result_widget)
+        layout.addWidget(results_card)
+        
+        return panel
+    
+    def create_modern_right_panel(self) -> QWidget:
+        """Modern sağ panel - belge detayları ve istatistikler"""
+        panel = QWidget()
+        layout = QVBoxLayout(panel)
+        layout.setSpacing(self.design_system.tokens.spacing.md)
+        
+        # Belge görüntüleyici kartı
+        viewer_card = ModernCard("Belge Detayları")
+        self.document_viewer = DocumentViewerWidget(self.db)
+        viewer_card.set_content(self.document_viewer)
+        layout.addWidget(viewer_card)
+        
+        # İstatistikler kartı
+        stats_card = ModernCard("İstatistikler")
+        self.stats_widget = StatsWidget(self.db, self.search_engine)
+        stats_card.set_content(self.stats_widget)
+        layout.addWidget(stats_card)
+        
+        return panel
+    
+    def create_modern_toolbar(self):
+        """Modern toolbar oluştur"""
+        toolbar = self.addToolBar('Ana Araçlar')
+        toolbar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        toolbar.setStyleSheet(self.design_system.get_toolbar_styles())
+        
+        # Modern butonları oluştur
+        add_files_btn = ModernButton(
+            "📄 Belge Ekle",
+            ButtonType.PRIMARY,
+            ButtonSize.MEDIUM
+        )
+        add_files_btn.setToolTip('Dosya seçerek yeni belge ekle (Ctrl+O)')
+        add_files_btn.clicked.connect(self.select_and_process_files)
+        toolbar.addWidget(add_files_btn)
+        
+        scan_btn = ModernButton(
+            "🔍 Raw Tara", 
+            ButtonType.SECONDARY,
+            ButtonSize.MEDIUM
+        )
+        scan_btn.setToolTip('Raw klasörünü otomatik tara')
+        scan_btn.clicked.connect(self.scan_raw_folder)
+        toolbar.addWidget(scan_btn)
+        
+        toolbar.addSeparator()
+        
+        rebuild_btn = ModernButton(
+            "🔄 İndeksi Yenile",
+            ButtonType.ACCENT,
+            ButtonSize.MEDIUM
+        )
+        rebuild_btn.setToolTip('Arama indeksini yeniden oluştur')
+        rebuild_btn.clicked.connect(self.rebuild_semantic_index)
+        toolbar.addWidget(rebuild_btn)
+        
+        toolbar.addSeparator()
+        
+        settings_btn = ModernButton(
+            "⚙️ Ayarlar",
+            ButtonType.TERTIARY,
+            ButtonSize.MEDIUM
+        )
+        settings_btn.clicked.connect(self.open_settings)
+        toolbar.addWidget(settings_btn)
+        
+        # Modern bileşenleri sakla
+        self.modern_components.update({
+            'toolbar_add_files': add_files_btn,
+            'toolbar_scan': scan_btn,
+            'toolbar_rebuild': rebuild_btn,
+            'toolbar_settings': settings_btn
+        })
+    
+    def create_modern_status_bar(self):
+        """Modern status bar oluştur"""
+        status_bar = self.statusBar()
+        status_bar.setStyleSheet(self.design_system.get_status_bar_styles())
+        
+        # File watcher status - Modern stil
+        self.file_watcher_status = FileWatcherStatus()
+        self.file_watcher_status.setStyleSheet(self.design_system.get_text_styles('body2'))
+        status_bar.addPermanentWidget(self.file_watcher_status)
+        
+        # Progress bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setStyleSheet(self.design_system.get_progress_bar_styles())
+        self.progress_bar.setVisible(False)
+        status_bar.addWidget(self.progress_bar)
+        
+        # Ana durum mesajı
+        status_bar.showMessage("Sistem hazır")
+    
+    def apply_modern_theme(self):
+        """Modern tema stillerini uygula"""
+        # Ana pencere stili
+        main_styles = self.theme_manager.get_main_window_styles()
+        self.setStyleSheet(main_styles)
+        
+        # Responsive davranış başlat
+        self.responsive_manager.start_monitoring(self)

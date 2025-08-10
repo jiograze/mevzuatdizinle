@@ -32,7 +32,7 @@ from app.core.base import (
 from app.core.database_manager import DatabaseManager
 from app.core.search_engine import SearchEngine
 from app.core.document_processor import DocumentProcessor
-from app.core.app_manager import AppManager
+from app.core.app_manager import MevzuatApp
 from app.utils.config_manager import ConfigManager
 from app.utils.logger import setup_logger
 
@@ -93,7 +93,7 @@ class EnhancedSecurityManager(BaseComponent):
         return self.error_handler.handle_error(error, context, user_mode)
 
 
-class QualityEnhancedAppManager(AppManager):
+class QualityEnhancedAppManager(MevzuatApp):
     """Geliştirilmiş uygulama yöneticisi - Kod kalitesi iyileştirmeleri ile"""
     
     def __init__(self, config_path: Optional[str] = None):
@@ -101,7 +101,12 @@ class QualityEnhancedAppManager(AppManager):
         if config_path and not Path(config_path).exists():
             raise FileNotFoundError(f"Config file not found: {config_path}")
         
-        super().__init__(config_path)
+        # MevzuatApp parametresiz çağrı
+        super().__init__()
+        
+        # Config path varsa yeniden yükle
+        if config_path:
+            self.config = ConfigManager(config_path)
         
         # Enhanced components
         self.security_manager: Optional[EnhancedSecurityManager] = None
@@ -317,6 +322,86 @@ class QualityEnhancedAppManager(AppManager):
             report['error'] = str(e)
         
         return report
+    
+    def run(self) -> int:
+        """Enhanced uygulamayı başlat"""
+        try:
+            # Enhanced bileşenleri başlat
+            if not self.initialize_enhanced_components():
+                self.logger.error("❌ Enhanced initialization failed")
+                return 1
+            
+            self.logger.info("✅ Enhanced initialization completed")
+            
+            # Sağlık kontrolü
+            health = self.health_check()
+            self.logger.info(f"🏥 System health: {health['overall_status']}")
+            
+            if health['issues']:
+                for issue in health['issues']:
+                    self.logger.warning(f"⚠️  {issue}")
+            
+            # Kalite raporu oluştur
+            quality_report = self.generate_quality_report()
+            self.logger.info(f"📊 Quality Report Generated - Success rates: {len(quality_report['quality_metrics'])} components")
+            
+            if quality_report['recommendations']:
+                self.logger.info("💡 Quality Recommendations:")
+                for rec in quality_report['recommendations']:
+                    self.logger.info(f"   - {rec}")
+            
+            # Ana uygulama başlat (PyQt5 app)
+            from PyQt5.QtWidgets import QApplication
+            
+            qt_app = QApplication(sys.argv)
+            self.qt_app = qt_app
+            
+            # Ana pencereyi enhanced manager ile başlat
+            from app.ui.main_window import MainWindow
+            
+            main_window = MainWindow(
+                config=self.config,
+                db=self.db,
+                search_engine=self.search_engine,
+                document_processor=self.document_processor,
+                file_watcher=self.file_watcher
+            )
+            
+            self.main_window = main_window
+            
+            # Security manager'ı main window'a bağla
+            if self.security_manager:
+                # Security event handlers
+                def on_file_upload_request(file_path: str):
+                    validation = self.security_manager.validate_file_upload(file_path)
+                    if not validation['is_safe']:
+                        main_window.show_error_message("Güvenlik Uyarısı", validation['error_message'])
+                        return False
+                    return True
+                
+                # Main window'a security callback ekle (eğer destekliyorsa)
+                if hasattr(main_window, 'set_file_upload_validator'):
+                    main_window.set_file_upload_validator(on_file_upload_request)
+            
+            main_window.show()
+            
+            self.logger.info("🖥️  GUI Application started")
+            
+            # Event loop
+            return qt_app.exec_()
+            
+        except Exception as e:
+            self.logger.error(f"❌ Application startup failed: {e}")
+            return 1
+        
+        finally:
+            # Cleanup
+            try:
+                if self.component_manager:
+                    self.component_manager.cleanup_all()
+                self.logger.info("🧹 Cleanup completed")
+            except Exception as e:
+                self.logger.error(f"Cleanup error: {e}")
 
 
 def main():
@@ -333,80 +418,12 @@ def main():
         # Enhanced App Manager oluştur
         app_manager = QualityEnhancedAppManager(str(config_path))
         
-        # Enhanced bileşenleri başlat
-        if not app_manager.initialize_enhanced_components():
-            logger.error("❌ Enhanced initialization failed")
-            return 1
-        
-        logger.info("✅ Enhanced initialization completed")
-        
-        # Sağlık kontrolü
-        health = app_manager.health_check()
-        logger.info(f"🏥 System health: {health['overall_status']}")
-        
-        if health['issues']:
-            for issue in health['issues']:
-                logger.warning(f"⚠️  {issue}")
-        
-        # Kalite raporu oluştur
-        quality_report = app_manager.generate_quality_report()
-        logger.info(f"📊 Quality Report Generated - Success rates: {len(quality_report['quality_metrics'])} components")
-        
-        if quality_report['recommendations']:
-            logger.info("💡 Quality Recommendations:")
-            for rec in quality_report['recommendations']:
-                logger.info(f"   - {rec}")
-        
-        # Ana uygulama başlat (PyQt5 app)
-        from PyQt5.QtWidgets import QApplication
-        
-        qt_app = QApplication(sys.argv)
-        
-        # Ana pencereyi enhanced manager ile başlat
-        from app.ui.main_window import MainWindow
-        
-        main_window = MainWindow(
-            config=app_manager.config,
-            db=app_manager.database_manager,
-            search_engine=app_manager.search_engine,
-            document_processor=app_manager.document_processor,
-            file_watcher=app_manager.file_watcher
-        )
-        
-        # Security manager'ı main window'a bağla
-        if app_manager.security_manager:
-            # Security event handlers
-            def on_file_upload_request(file_path: str):
-                validation = app_manager.security_manager.validate_file_upload(file_path)
-                if not validation['is_safe']:
-                    main_window.show_error_message("Güvenlik Uyarısı", validation['error_message'])
-                    return False
-                return True
-            
-            # Main window'a security callback ekle (eğer destekliyorsa)
-            if hasattr(main_window, 'set_file_upload_validator'):
-                main_window.set_file_upload_validator(on_file_upload_request)
-        
-        main_window.show()
-        
-        logger.info("🖥️  GUI Application started")
-        
-        # Event loop
-        return qt_app.exec_()
+        # Enhanced uygulamayı başlat
+        return app_manager.run()
         
     except Exception as e:
         logger.error(f"❌ Application startup failed: {e}")
         return 1
-    
-    finally:
-        # Cleanup
-        try:
-            if 'app_manager' in locals():
-                if app_manager.component_manager:
-                    app_manager.component_manager.cleanup_all()
-                logger.info("🧹 Cleanup completed")
-        except Exception as e:
-            logger.error(f"Cleanup error: {e}")
 
 
 if __name__ == "__main__":

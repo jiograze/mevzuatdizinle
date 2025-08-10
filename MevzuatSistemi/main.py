@@ -33,41 +33,43 @@ def main():
         print("✅ Enhanced App Manager oluşturuldu")
         
         # Sistem sağlık kontrolü
-        health_status = app_manager.perform_health_check()
-        if health_status.get('overall_health', 0) < 0.5:
+        health_status = app_manager.health_check()
+        if health_status.get('overall_status') != 'healthy':
             print("⚠️  Sistem sağlık kontrolünde sorunlar tespit edildi")
-            for component, status in health_status.get('component_health', {}).items():
-                if not status:
-                    print(f"❌ {component}: Çalışmıyor")
+            for issue in health_status.get('issues', []):
+                print(f"❌ {issue}")
         else:
             print("✅ Sistem sağlık kontrolü başarılı")
         
         # Uygulamayı başlat
-        app_manager.run()
+        result = app_manager.run()
+        sys.exit(result if result is not None else 0)
         
     except ImportError as e:
-        user_message = error_handler.get_user_friendly_message(e, "IMPORT_ERROR")
+        user_message = error_handler.handle_error(e, "IMPORT_ERROR")
         print(f"❌ Modül yükleme hatası: {user_message}")
         logger.error(f"Import error: {e}")
         sys.exit(1)
         
     except PermissionError as e:
-        user_message = error_handler.get_user_friendly_message(e, "FILE_PERMISSION")
+        user_message = error_handler.handle_error(e, "FILE_PERMISSION")
         print(f"❌ Yetki hatası: {user_message}")
         logger.error(f"Permission error: {e}")
         sys.exit(1)
         
     except FileNotFoundError as e:
-        user_message = error_handler.get_user_friendly_message(e, "FILE_NOT_FOUND")
+        user_message = error_handler.handle_error(e, "FILE_NOT_FOUND")
         print(f"❌ Dosya bulunamadı: {user_message}")
         logger.error(f"File not found: {e}")
         sys.exit(1)
         
     except Exception as e:
-        user_message = error_handler.get_user_friendly_message(e, "GENERAL_ERROR")
+        user_message = error_handler.handle_error(e, "GENERAL_ERROR")
         print(f"❌ Uygulama başlatılırken hata oluştu: {user_message}")
+        print(f"ERROR: {e}")
         logger.error(f"Application startup error: {e}")
         import traceback
+        print("Full traceback:")
         traceback.print_exc()
         sys.exit(1)
 
