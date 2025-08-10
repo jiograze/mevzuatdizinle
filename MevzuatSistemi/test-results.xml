@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="2.117" timestamp="2025-08-10T16:24:44.732628" hostname="DESKTOP-RTV736I"><testcase classname="" name="tests.manual.test_semantic_search_manual" time="0.000"><error message="collection failure">ImportError while importing test module 'C:\Users\klc\Desktop\mevzuat\MevzuatSistemi\tests\manual\test_semantic_search_manual.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+..\..\..\AppData\Local\Programs\Python\Python39\lib\importlib\__init__.py:127: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests\manual\test_semantic_search_manual.py:13: in &lt;module&gt;
+    from app.core.search_engine import HybridSearchEngine, SearchResult
+E   ImportError: cannot import name 'HybridSearchEngine' from 'app.core.search_engine' (C:\Users\klc\Desktop\mevzuat\MevzuatSistemi\app\core\search_engine.py)</error></testcase></testsuite></testsuites>

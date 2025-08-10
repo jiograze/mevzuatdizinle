@@ -1,0 +1,19 @@
+base_folder: C:\Users\klc\Documents\MevzuatDeposu
+app_version: 1.0.2
+user_id: klc
+creation_date: '2025-08-10 15:53:58'
+watch_enabled: true
+watch_raw_folder: C:\Users\klc\Documents\MevzuatDeposu\raw
+logging:
+  level: INFO
+  rotate_size_mb: 5
+  keep_files: 5
+embedding:
+  model_name: sentence-transformers/all-MiniLM-L6-v2
+  batch_size: 32
+  low_memory_mode: false
+search:
+  semantic_enabled: true
+  max_results: 20
+  semantic_weight: 0.4
+  keyword_weight: 0.6

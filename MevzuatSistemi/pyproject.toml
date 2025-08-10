@@ -1,0 +1,56 @@
+[tool.pytest.ini_options]
+# Pytest konfigürasyonu
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# Test discovery patterns
+addopts = [
+    "--verbose",
+    "--tb=short",
+    "--strict-markers",
+    "--disable-warnings",
+    "--color=yes",
+    "--durations=10"
+]
+
+# Custom markers
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests", 
+    "ui: marks tests as UI tests requiring display",
+    "unit: marks tests as unit tests"
+]
+
+# Test timeout
+timeout = 300
+
+# Coverage settings (eğer pytest-cov kullanılıyorsa)
+# addopts += ["--cov=app", "--cov-report=html", "--cov-report=term-missing"]
+
+# Parallel execution (eğer pytest-xdist kullanılıyorsa) 
+# addopts += ["-n", "auto"]
+
+[tool.coverage.run]
+# Coverage konfigürasyonu
+source = ["app"]
+omit = [
+    "tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/migrations/*",
+    "build.py",
+    "setup.py"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:"
+]
