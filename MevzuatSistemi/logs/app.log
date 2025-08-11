@@ -538,3 +538,56 @@
 2025-08-11 07:50:20 | QualityEnhancedAppManager | INFO | 🧹 Cleanup completed
 2025-08-11 07:50:20 | QualityEnhancedAppManager | INFO | Uygulama kapatılıyor...
 2025-08-11 07:50:20 | QualityEnhancedAppManager | INFO | Uygulama temiz şekilde kapatıldı
+2025-08-11 22:47:20 | mevzuat_main | INFO | Logger başlatıldı: mevzuat_main
+2025-08-11 22:47:20 | mevzuat_main | INFO | Mevzuat Sistemi Enhanced başlatılıyor...
+2025-08-11 22:47:20 | QualityEnhancedAppManager | INFO | Logger başlatıldı: QualityEnhancedAppManager
+2025-08-11 22:47:20 | QualityEnhancedAppManager | INFO | Mevzuat sistemi başlatılıyor...
+2025-08-11 22:47:20 | QualityEnhancedAppManager | INFO | Tüm bileşenler başarıyla başlatıldı
+2025-08-11 22:47:20 | QualityEnhancedAppManager | INFO | Enhanced initialization completed in 0.00s
+2025-08-11 22:47:20 | QualityEnhancedAppManager | INFO | ✅ Enhanced initialization completed
+2025-08-11 22:47:20 | QualityEnhancedAppManager | INFO | 🏥 System health: unhealthy
+2025-08-11 22:47:20 | QualityEnhancedAppManager | INFO | 📊 Quality Report Generated - Success rates: 1 components
+2025-08-11 22:47:21 | QualityEnhancedAppManager | ERROR | ❌ Application startup failed: 'SearchWidget' object has no attribute 'search_completed'
+2025-08-11 22:47:21 | QualityEnhancedAppManager | INFO | 🧹 Cleanup completed
+2025-08-11 22:47:21 | QualityEnhancedAppManager | INFO | Uygulama kapatılıyor...
+2025-08-11 22:47:21 | QualityEnhancedAppManager | INFO | Uygulama temiz şekilde kapatıldı
+2025-08-11 22:53:58 | mevzuat_main | INFO | Logger başlatıldı: mevzuat_main
+2025-08-11 22:53:58 | mevzuat_main | INFO | Mevzuat Sistemi Enhanced başlatılıyor...
+2025-08-11 22:53:58 | QualityEnhancedAppManager | INFO | Logger başlatıldı: QualityEnhancedAppManager
+2025-08-11 22:53:58 | QualityEnhancedAppManager | INFO | Mevzuat sistemi başlatılıyor...
+2025-08-11 22:53:58 | QualityEnhancedAppManager | INFO | Tüm bileşenler başarıyla başlatıldı
+2025-08-11 22:53:58 | QualityEnhancedAppManager | INFO | Enhanced initialization completed in 0.00s
+2025-08-11 22:53:58 | QualityEnhancedAppManager | INFO | ✅ Enhanced initialization completed
+2025-08-11 22:53:58 | QualityEnhancedAppManager | INFO | 🏥 System health: unhealthy
+2025-08-11 22:53:58 | QualityEnhancedAppManager | INFO | 📊 Quality Report Generated - Success rates: 1 components
+2025-08-11 22:53:58 | QualityEnhancedAppManager | ERROR | ❌ Application startup failed: 'MainWindow' object has no attribute 'on_search_completed'
+2025-08-11 22:53:58 | QualityEnhancedAppManager | INFO | 🧹 Cleanup completed
+2025-08-11 22:53:58 | QualityEnhancedAppManager | INFO | Uygulama kapatılıyor...
+2025-08-11 22:53:58 | QualityEnhancedAppManager | INFO | Uygulama temiz şekilde kapatıldı
+2025-08-11 22:58:42 | mevzuat_main | INFO | Logger başlatıldı: mevzuat_main
+2025-08-11 22:58:42 | mevzuat_main | INFO | Mevzuat Sistemi Enhanced başlatılıyor...
+2025-08-11 22:58:42 | QualityEnhancedAppManager | INFO | Logger başlatıldı: QualityEnhancedAppManager
+2025-08-11 22:58:42 | QualityEnhancedAppManager | INFO | Mevzuat sistemi başlatılıyor...
+2025-08-11 22:58:42 | QualityEnhancedAppManager | INFO | Tüm bileşenler başarıyla başlatıldı
+2025-08-11 22:58:42 | QualityEnhancedAppManager | INFO | Enhanced initialization completed in 0.00s
+2025-08-11 22:58:42 | QualityEnhancedAppManager | INFO | ✅ Enhanced initialization completed
+2025-08-11 22:58:42 | QualityEnhancedAppManager | INFO | 🏥 System health: unhealthy
+2025-08-11 22:58:42 | QualityEnhancedAppManager | INFO | 📊 Quality Report Generated - Success rates: 1 components
+2025-08-11 22:58:43 | QualityEnhancedAppManager | ERROR | ❌ Application startup failed: 'ResultWidget' object has no attribute 'document_selected'
+2025-08-11 22:58:43 | QualityEnhancedAppManager | INFO | 🧹 Cleanup completed
+2025-08-11 22:58:43 | QualityEnhancedAppManager | INFO | Uygulama kapatılıyor...
+2025-08-11 22:58:43 | QualityEnhancedAppManager | INFO | Uygulama temiz şekilde kapatıldı
+2025-08-11 23:00:12 | mevzuat_main | INFO | Logger başlatıldı: mevzuat_main
+2025-08-11 23:00:12 | mevzuat_main | INFO | Mevzuat Sistemi Enhanced başlatılıyor...
+2025-08-11 23:00:12 | QualityEnhancedAppManager | INFO | Logger başlatıldı: QualityEnhancedAppManager
+2025-08-11 23:00:12 | QualityEnhancedAppManager | INFO | Mevzuat sistemi başlatılıyor...
+2025-08-11 23:00:12 | QualityEnhancedAppManager | INFO | Tüm bileşenler başarıyla başlatıldı
+2025-08-11 23:00:12 | QualityEnhancedAppManager | INFO | Enhanced initialization completed in 0.00s
+2025-08-11 23:00:12 | QualityEnhancedAppManager | INFO | ✅ Enhanced initialization completed
+2025-08-11 23:00:12 | QualityEnhancedAppManager | INFO | 🏥 System health: unhealthy
+2025-08-11 23:00:12 | QualityEnhancedAppManager | INFO | 📊 Quality Report Generated - Success rates: 1 components
+2025-08-11 23:00:12 | QualityEnhancedAppManager | INFO | 🖥️  GUI Application started
+2025-08-11 23:00:24 | QualityEnhancedAppManager | ERROR | Search validation failed: Arama sorgusu boş olamaz
+2025-08-11 23:00:32 | QualityEnhancedAppManager | INFO | 🧹 Cleanup completed
+2025-08-11 23:00:32 | QualityEnhancedAppManager | INFO | Uygulama kapatılıyor...
+2025-08-11 23:00:32 | QualityEnhancedAppManager | INFO | Uygulama temiz şekilde kapatıldı

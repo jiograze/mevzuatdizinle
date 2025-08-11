@@ -172,6 +172,7 @@ class SearchWidget(BaseUIWidget):
     """Ana arama widget'ı"""
     
     search_requested = pyqtSignal(str, str)  # query, search_type
+    search_completed = pyqtSignal(list)  # search results
     
     def __init__(self, search_engine, parent=None, config=None):
         super().__init__(parent, config)

@@ -107,6 +107,9 @@ class MainWindow(QMainWindow):
         # Modern UI bileşenleri
         self.modern_components = {}
         
+        # Favoriler listesi
+        self.favorites_list = []
+        
         # Timers
         self.status_update_timer = QTimer()
         self.status_update_timer.timeout.connect(self.update_status)
@@ -1201,6 +1204,47 @@ class MainWindow(QMainWindow):
             # File watcher'ı restart et (gerekiyorsa)
             # TODO: Implement settings application
     
+    def refresh_favorites(self):
+        """Favoriler listesini yenile"""
+        try:
+            # Favoriler listesini boş bir liste ile başlat
+            self.favorites_list = []
+            
+            # Veritabanı bağlantısı varsa favorileri yükle
+            if hasattr(self, 'db') and self.db:
+                try:
+                    self.favorites_list = self.db.get_all_favorites()
+                except Exception as db_error:
+                    self.logger.error(f"Veritabanından favoriler yüklenirken hata: {str(db_error)}")
+            
+            # Favori ağacı widget'ı varsa güncelle
+            if hasattr(self, 'favorites_tree') and self.favorites_tree:
+                try:
+                    self.favorites_tree.clear()
+                    
+                    for fav in self.favorites_list:
+                        try:
+                            item = QTreeWidgetItem([fav.get('title', 'İsimsiz')])
+                            item.setData(0, Qt.UserRole, fav.get('document_id'))
+                            self.favorites_tree.addTopLevelItem(item)
+                        except Exception as item_error:
+                            self.logger.error(f"Favori öğesi eklenirken hata: {str(item_error)}")
+                    
+                    # Favori durumunu güncelle
+                    if hasattr(self, 'result_widget') and self.result_widget:
+                        for fav in self.favorites_list:
+                            try:
+                                self.result_widget.update_favorite_status(fav.get('document_id'), True)
+                            except Exception as update_error:
+                                self.logger.error(f"Favori durumu güncellenirken hata: {str(update_error)}")
+                except Exception as tree_error:
+                    self.logger.error(f"Favori ağacı güncellenirken hata: {str(tree_error)}")
+                    
+        except Exception as e:
+            self.logger.error(f"Favori listesi yenileme hatası: {str(e)}")
+            # Hata durumunda en azından boş bir liste ile devam et
+            self.favorites_list = []
+    
     def update_status(self):
         """Durumu güncelle"""
         try:
@@ -1682,6 +1726,26 @@ class MainWindow(QMainWindow):
             self.logger.error(f"Belge görüntüleme hatası: {e}")
             QMessageBox.critical(self, "Hata", f"Belge görüntülenirken hata oluştu:\n{e}")
     
+    def on_document_selected(self, document_data: dict):
+        """Belge seçildiğinde"""
+        try:
+            self.current_document = document_data
+            self.document_viewer.display_document(document_data)
+            self.stats_widget.update_document_stats(document_data.get('id'))
+        except Exception as e:
+            self.logger.error(f"Belge gösterilirken hata: {str(e)}")
+            QMessageBox.critical(self, "Hata", f"Belge gösterilirken bir hata oluştu: {str(e)}")
+            
+    def on_search_completed(self, results: list):
+        """Arama tamamlandığında çağrılır"""
+        try:
+            self.result_widget.display_results(results)
+            if not results:
+                QMessageBox.information(self, "Bilgi", "Arama sonucu bulunamadı.")
+        except Exception as e:
+            self.logger.error(f"Arama sonuçları işlenirken hata: {str(e)}")
+            QMessageBox.critical(self, "Hata", f"Arama sonuçları işlenirken bir hata oluştu: {str(e)}")
+    
     def on_document_deleted(self, document_id: int):
         """Belge silindiğinde çağrılır"""
         # UI'yı güncelle
@@ -1825,8 +1889,8 @@ class MainWindow(QMainWindow):
         # Sonuçlar kartı
         results_card = ModernCard("Sonuçlar")
         self.result_widget = ResultWidget(self.db)
-        self.result_widget.document_selected.connect(self.on_document_selected)
-        self.result_widget.document_requested.connect(self.view_document)
+        self.result_widget.result_selected.connect(self.on_document_selected)
+        self.result_widget.document_view_requested.connect(self.view_document)
         results_card.set_content(self.result_widget)
         layout.addWidget(results_card)
         

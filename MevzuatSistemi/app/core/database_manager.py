@@ -355,50 +355,10 @@ class DatabaseManager:
                     article_data.get('content_clean', ''),
                     article_data.get('article_number', '')
                 ))
-            
-            self.logger.debug(f"Madde eklendi: {article_id}")
-            return article_id
-    
-    def search_articles(self, query: str, document_types: List[str] = None, 
-                       limit: int = 20) -> List[Dict[str, Any]]:
-        """FTS ile madde arama"""
+                return cursor.lastrowid
         
-        base_query = """
-        SELECT 
-            a.id, a.document_id, a.article_number, a.title, a.content,
-            a.is_repealed, a.is_amended,
-            d.title as document_title, d.law_number, d.document_type,
-            rank
-        FROM articles_fts 
-        JOIN articles a ON articles_fts.rowid = a.id
-        JOIN documents d ON a.document_id = d.id
-        WHERE articles_fts MATCH ?
-        """
-        
-        params = [query]
-        
-        if document_types:
-            placeholders = ', '.join(['?' for _ in document_types])
-            base_query += f" AND d.document_type IN ({placeholders})"
-            params.extend(document_types)
-        
-        base_query += " ORDER BY rank LIMIT ?"
-        params.append(limit)
-        
-        cursor = self.connection.cursor()
-        cursor.execute(base_query, params)
-        
-        columns = [desc[0] for desc in cursor.description]
-        results = [dict(zip(columns, row)) for row in cursor.fetchall()]
-        
-        cursor.close()
-        
-        return results
-    
-    def get_document_by_id(self, doc_id: int) -> Optional[Dict[str, Any]]:
-        """ID ile belge getir"""
-        cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM documents WHERE id = ?", (doc_id,))
+        def get_recent_operations(self, limit: int = 20) -> List[Dict[str, Any]]:
+            """Son işlemleri getir"""
         
         row = cursor.fetchone()
         cursor.close()
