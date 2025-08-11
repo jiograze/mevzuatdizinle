@@ -1,0 +1,6 @@
+{
+  "name": "Mevzuat Dizinle Geliştirme Ortamı",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  }
+}

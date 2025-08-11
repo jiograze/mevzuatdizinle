@@ -105,3 +105,63 @@ Başka bir konuda yardımcı olmamı ister misiniz?
 
 ---
 
+_**User**_
+
+güncellemeleri githuba yükle
+
+---
+
+_**Assistant**_
+
+Tüm güncellemeler başarıyla commitlendi ve Github ana dalına (main) gönderildi.
+
+Başka bir işlem yapmak ister misiniz?
+
+---
+
+_**User**_
+
+Codacy CLI analizi tekrar
+
+---
+
+_**Assistant**_
+
+Codacy CLI analizi ortamınızda WSL (Linux için Windows Alt Sistemi) yüklü olmadığı için çalıştırılamıyor. Bu nedenle analiz başlatılamıyor.
+
+**Çözüm için tekrar hatırlatma:**
+1. VSCode'da Copilot > MCP ayarlarını kontrol edin ve MCP sunucularının etkin olduğundan emin olun.
+2. Gerekirse MCP'yi sıfırlamayı deneyin.
+3. GitHub ayarlarında (https://github.com/settings/copilot/features) veya organizasyonunuzun Copilot ayarlarında MCP sunucularının etkin olduğundan emin olun:  
+   https://github.com/organizations/{organization-name}/settings/copilot/features  
+   (Bu ayarları sadece organizasyon adminleri/owner'ları değiştirebilir.)
+4. Sorun devam ederse Codacy destek ekibiyle iletişime geçin.
+
+Başka bir konuda yardımcı olmamı ister misiniz?
+
+---
+
+_**User**_
+
+tekrar dene
+
+---
+
+_**Assistant**_
+
+Codacy CLI analizi ortamınızda WSL yüklü olmadığı için çalıştırılamıyor ve analiz başlatılamıyor.
+
+Lütfen aşağıdaki adımları uygulayın:
+1. VSCode'da Copilot > MCP ayarlarını kontrol edin ve MCP sunucularının etkin olduğundan emin olun.
+2. MCP'yi sıfırlamayı deneyin.
+3. GitHub veya organizasyon Copilot ayarlarında MCP sunucularının etkin olduğundan emin olun:  
+   https://github.com/settings/copilot/features  
+   veya  
+   https://github.com/organizations/{organization-name}/settings/copilot/features  
+   (Bu ayarları sadece organizasyon adminleri/owner'ları değiştirebilir.)
+4. Sorun devam ederse Codacy destek ekibiyle iletişime geçin.
+
+Başka bir konuda yardımcı olmamı ister misiniz?
+
+---
+

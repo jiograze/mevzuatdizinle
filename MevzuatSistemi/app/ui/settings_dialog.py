@@ -3,20 +3,17 @@ Ayarlar dialog'u - sistem yapılandırması
 """
 
 import logging
-import os
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 from PyQt5.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QGridLayout,
+    QDialog, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QLineEdit, QComboBox, QCheckBox,
-    QSpinBox, QSlider, QTextEdit, QGroupBox, QTabWidget,
-    QFileDialog, QMessageBox, QListWidget, QListWidgetItem,
-    QFrame, QScrollArea, QFormLayout, QButtonGroup, QRadioButton,
+    QSpinBox, QSlider, QGroupBox, QTabWidget,
+    QFileDialog, QMessageBox, QFormLayout,
     QWidget
 )
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt
 
 from app.core.base import BaseUIWidget
 
