@@ -1817,7 +1817,7 @@ class MainWindow(QMainWindow):
         
         # Arama kartı
         search_card = ModernCard("Arama")
-        self.search_widget = SearchWidget(self.db, self.search_engine, self.config)
+        self.search_widget = SearchWidget(self.search_engine, parent=search_card, config=self.config)
         self.search_widget.search_completed.connect(self.on_search_completed)
         search_card.set_content(self.search_widget)
         layout.addWidget(search_card)

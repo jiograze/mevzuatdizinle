@@ -181,3 +181,22 @@ with TimedOperation("document_processing", details={"file_size": 1024}):
 # Manuel performans kaydı
 log_performance_metric("search_query", 250.5, {"results_count": 15})
 """
+
+
+def get_logger(name: str) -> logging.Logger:
+    """
+    Mevcut logger'ı getir veya yeni logger oluştur
+    
+    Args:
+        name: Logger adı
+        
+    Returns:
+        Logger instance
+    """
+    logger = logging.getLogger(name)
+    
+    # Eğer logger henüz yapılandırılmamışsa, basit yapılandırma uygula
+    if not logger.handlers:
+        logger = setup_logger(name)
+    
+    return logger

@@ -324,7 +324,7 @@ class AdvancedThemeManager(QObject):
             
             /* Tablet Responsive Styles */
             .tablet-grid-2 { grid-template-columns: repeat(2, 1fr); }
-            .tablet-compact { padding: var(--spacing-sm); }
+            .tablet-compact { padding: 8px; }
             
             /* Desktop Responsive Styles */
             .desktop-grid-3 { grid-template-columns: repeat(3, 1fr); }
@@ -338,7 +338,6 @@ class AdvancedThemeManager(QObject):
             
             /* High DPI Support */
             @media (min-resolution: 2dppx) {
-                .icon { transform: scale(0.5); }
                 .icon-container { zoom: 2; }
             }
         """

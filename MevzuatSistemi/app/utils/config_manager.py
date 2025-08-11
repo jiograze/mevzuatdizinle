@@ -187,9 +187,11 @@ class ConfigManager:
                 )
             
             self.logger.info(f"Konfigürasyon kaydedildi: {self.config_path}")
+            return True
             
         except Exception as e:
             self.logger.error(f"Konfigürasyon kaydetme hatası: {e}")
+            return False
     
     def get_base_folder(self) -> Path:
         """Ana klasör yolunu Path objesi olarak döndür"""
@@ -218,3 +220,104 @@ class ConfigManager:
     def __str__(self) -> str:
         """String temsili"""
         return f"ConfigManager(path={self.config_path}, base_folder={self.get('base_folder')})"
+    
+    def get_all_keys(self) -> list:
+        """
+        Tüm konfigürasyon anahtarlarını nokta notasyonu ile döndür
+        
+        Returns:
+            Tüm anahtar listesi (örn: ['database.path', 'logging.level'])
+        """
+        keys = []
+        
+        def _collect_keys(data: dict, prefix: str = '') -> None:
+            """Recursive olarak anahtarları topla"""
+            for key, value in data.items():
+                full_key = f"{prefix}.{key}" if prefix else key
+                
+                if isinstance(value, dict):
+                    _collect_keys(value, full_key)
+                else:
+                    keys.append(full_key)
+        
+        _collect_keys(self.config_data)
+        return sorted(keys)
+    
+    def has_key(self, key: str) -> bool:
+        """
+        Anahtarın var olup olmadığını kontrol et
+        
+        Args:
+            key: Kontrol edilecek anahtar (nokta notasyonu)
+            
+        Returns:
+            Anahtar var mı?
+        """
+        return self.get(key) is not None
+    
+    def get_section(self, section_key: str) -> Dict[str, Any]:
+        """
+        Bir bölümün tüm değerlerini döndür
+        
+        Args:
+            section_key: Bölüm anahtarı (örn: 'database')
+            
+        Returns:
+            Bölüm verileri
+        """
+        return self.get(section_key, {})
+    
+    def update_section(self, section_key: str, values: Dict[str, Any]):
+        """
+        Bir bölümü toplu olarak güncelle
+        
+        Args:
+            section_key: Bölüm anahtarı
+            values: Yeni değerler
+        """
+        if section_key not in self.config_data:
+            self.config_data[section_key] = {}
+            
+        self.config_data[section_key].update(values)
+        self.save()
+    
+    def validate_structure(self) -> bool:
+        """
+        Konfigürasyon yapısının geçerli olup olmadığını kontrol et
+        
+        Returns:
+            Yapı geçerli mi?
+        """
+        try:
+            # Zorunlu anahtarları kontrol et
+            required_keys = [
+                'base_folder',
+                'app_version',
+                'user_id'
+            ]
+            
+            for key in required_keys:
+                if self.get(key) is None:
+                    self.logger.warning(f"Eksik zorunlu konfigürasyon: {key}")
+                    return False
+            
+            # Alt yapı kontrolü
+            if not isinstance(self.get('logging', {}), dict):
+                self.logger.warning("'logging' bölümü dict olmalı")
+                return False
+                
+            if not isinstance(self.get('search', {}), dict):
+                self.logger.warning("'search' bölümü dict olmalı")
+                return False
+            
+            # Dosya yolu kontrolü
+            base_folder = Path(self.get('base_folder'))
+            if not base_folder.is_absolute():
+                self.logger.warning(f"base_folder mutlak yol olmalı: {base_folder}")
+                return False
+                
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Yapı validasyon hatası: {e}")
+            return False

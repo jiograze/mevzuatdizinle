@@ -42,6 +42,8 @@ class ButtonType(Enum):
     INFO = "info"
     GHOST = "ghost"
     TEXT = "text"
+    ACCENT = "accent"  # Ana renk vurgusu için
+    TERTIARY = "tertiary"  # Üçüncül renk
 
 
 class ButtonSize(Enum):
@@ -137,33 +139,33 @@ class ModernButton(QPushButton):
         if self.button_type == ButtonType.PRIMARY:
             style += """
                 ModernButton {
-                    background-color: var(--color-primary);
+                    background-color: #1976D2;
                     color: white;
                 }
                 ModernButton:hover {
-                    background-color: var(--color-primary-variant);
+                    background-color: #1565C0;
                 }
                 ModernButton:pressed {
-                    background-color: var(--color-primary-variant);
-                    transform: translateY(1px);
+                    background-color: #1565C0;
+                    margin-top: 1px;
                 }
             """
         elif self.button_type == ButtonType.SECONDARY:
             style += """
                 ModernButton {
-                    background-color: var(--color-surface);
-                    color: var(--color-primary);
-                    border: 2px solid var(--color-primary);
+                    background-color: #FFFFFF;
+                    color: #1976D2;
+                    border: 2px solid #1976D2;
                 }
                 ModernButton:hover {
-                    background-color: var(--color-primary);
+                    background-color: #1976D2;
                     color: white;
                 }
             """
         elif self.button_type == ButtonType.SUCCESS:
             style += """
                 ModernButton {
-                    background-color: var(--color-success);
+                    background-color: #388E3C;
                     color: white;
                 }
                 ModernButton:hover {
@@ -173,7 +175,7 @@ class ModernButton(QPushButton):
         elif self.button_type == ButtonType.WARNING:
             style += """
                 ModernButton {
-                    background-color: var(--color-warning);
+                    background-color: #F57C00;
                     color: white;
                 }
                 ModernButton:hover {
@@ -183,7 +185,7 @@ class ModernButton(QPushButton):
         elif self.button_type == ButtonType.ERROR:
             style += """
                 ModernButton {
-                    background-color: var(--color-error);
+                    background-color: #D32F2F;
                     color: white;
                 }
                 ModernButton:hover {
@@ -194,11 +196,11 @@ class ModernButton(QPushButton):
             style += """
                 ModernButton {
                     background-color: transparent;
-                    color: var(--color-primary);
-                    border: 1px solid var(--color-border-medium);
+                    color: #1976D2;
+                    border: 1px solid #BDBDBD;
                 }
                 ModernButton:hover {
-                    background-color: var(--color-primary);
+                    background-color: #1976D2;
                     color: white;
                 }
             """
@@ -206,19 +208,49 @@ class ModernButton(QPushButton):
             style += """
                 ModernButton {
                     background-color: transparent;
-                    color: var(--color-primary);
+                    color: #1976D2;
                     padding: 8px 12px;
                 }
                 ModernButton:hover {
                     background-color: rgba(25, 118, 210, 0.1);
                 }
             """
+        elif self.button_type == ButtonType.ACCENT:
+            style += """
+                ModernButton {
+                    background-color: #DC004E;
+                    color: white;
+                    padding: 8px 16px;
+                    border: none;
+                }
+                ModernButton:hover {
+                    background-color: #C51162;
+                }
+                ModernButton:pressed {
+                    background-color: #A0003A;
+                }
+            """
+        elif self.button_type == ButtonType.TERTIARY:
+            style += """
+                ModernButton {
+                    background-color: #757575;
+                    color: white;
+                    padding: 8px 16px;
+                    border: none;
+                }
+                ModernButton:hover {
+                    background-color: #616161;
+                }
+                ModernButton:pressed {
+                    background-color: #424242;
+                }
+            """
         
         # Disabled state
         style += """
             ModernButton:disabled {
-                background-color: var(--color-text-disabled);
-                color: var(--color-text-hint);
+                background-color: #BDBDBD;
+                color: #9E9E9E;
                 border: none;
             }
         """
@@ -323,20 +355,20 @@ class SmartInput(QLineEdit):
     def _update_style(self):
         """Stil güncellemesi"""
         if self.state == InputState.NORMAL:
-            border_color = "var(--color-border-light)"
-            background_color = "var(--color-surface)"
+            border_color = "#E0E0E0"
+            background_color = "#FFFFFF"
         elif self.state == InputState.FOCUS:
-            border_color = "var(--color-primary)"
-            background_color = "var(--color-surface)"
+            border_color = "#1976D2"
+            background_color = "#FFFFFF"
         elif self.state == InputState.ERROR:
-            border_color = "var(--color-error)"
-            background_color = "var(--color-surface)"
+            border_color = "#D32F2F"
+            background_color = "#FFFFFF"
         elif self.state == InputState.SUCCESS:
-            border_color = "var(--color-success)"
-            background_color = "var(--color-surface)"
+            border_color = "#388E3C"
+            background_color = "#FFFFFF"
         else:  # DISABLED
-            border_color = "var(--color-border-light)"
-            background_color = "var(--color-text-disabled)"
+            border_color = "#E0E0E0"
+            background_color = "#BDBDBD"
         
         style = f"""
             SmartInput {{
@@ -345,16 +377,16 @@ class SmartInput(QLineEdit):
                 border-radius: 8px;
                 padding: 12px 16px;
                 font-size: 14px;
-                color: var(--color-text-primary);
+                color: #212121;
             }}
             
             SmartInput:focus {{
-                border-color: var(--color-primary);
+                border-color: #1976D2;
                 outline: none;
             }}
             
             SmartInput::placeholder {{
-                color: var(--color-text-hint);
+                color: #9E9E9E;
             }}
         """
         
@@ -453,14 +485,14 @@ class ModernCard(QFrame):
             title_font.setPixelSize(18)
             title_font.setWeight(QFont.Medium)
             title_label.setFont(title_font)
-            title_label.setStyleSheet("color: var(--color-text-primary);")
+            title_label.setStyleSheet("color: #212121;")
             layout.addWidget(title_label)
         
         # Content
         if self.content:
             content_label = QLabel(self.content)
             content_label.setWordWrap(True)
-            content_label.setStyleSheet("color: var(--color-text-secondary);")
+            content_label.setStyleSheet("color: #757575;")
             layout.addWidget(content_label)
         
         # Style
@@ -489,13 +521,13 @@ class ModernCard(QFrame):
         """Stil güncellemesi"""
         style = """
             ModernCard {
-                background-color: var(--color-card-background);
-                border: 1px solid var(--color-border-light);
+                background-color: #FFFFFF;
+                border: 1px solid #E0E0E0;
                 border-radius: 12px;
             }
             
             ModernCard:hover {
-                border-color: var(--color-border-medium);
+                border-color: #BDBDBD;
             }
         """
         
@@ -698,17 +730,17 @@ class ModernDialog(QDialog):
         """Stil güncellemesi"""
         style = """
             ModernDialog {
-                background-color: var(--color-surface);
-                border: 1px solid var(--color-border-light);
+                background-color: #FFFFFF;
+                border: 1px solid #E0E0E0;
                 border-radius: 16px;
             }
             
             QLabel {
-                color: var(--color-text-primary);
+                color: #212121;
             }
             
             QPushButton {
-                background-color: var(--color-primary);
+                background-color: #1976D2;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -718,7 +750,7 @@ class ModernDialog(QDialog):
             }
             
             QPushButton:hover {
-                background-color: var(--color-primary-variant);
+                background-color: #1565C0;
             }
         """
         

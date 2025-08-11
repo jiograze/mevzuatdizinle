@@ -22,9 +22,32 @@ class ColorScheme(Enum):
     CUSTOM = "custom"
 
 
+@dataclass  
+class SpacingTokens:
+    """Spacing tokenları için namespace"""
+    xs: int = 4
+    sm: int = 8 
+    md: int = 16
+    lg: int = 24
+    xl: int = 32
+    xxl: int = 48
+
+@dataclass
+class BorderRadiusTokens:
+    """Border radius tokenları için namespace"""
+    sm: int = 4
+    md: int = 8
+    lg: int = 12
+    xl: int = 16
+
 @dataclass
 class DesignTokens:
     """Design tokens - tasarım sabitleri"""
+    
+    def __post_init__(self):
+        # Nested objects
+        self.spacing = SpacingTokens()
+        self.border_radius = BorderRadiusTokens()
     
     # Colors
     primary: str = "#1976D2"          # Ana renk - Mavi
@@ -61,6 +84,9 @@ class DesignTokens:
     spacing_lg: int = 24   # Large
     spacing_xl: int = 32   # Extra large
     spacing_xxl: int = 48  # Extra extra large
+    
+    # Legacy spacing support
+    spacing: int = 16      # Default spacing for backward compatibility
     
     # Border radius
     border_radius_sm: int = 4   # Small radius
@@ -113,6 +139,8 @@ class MevzuatDesignSystem:
         self.themes: Dict[ColorScheme, DesignTokens] = {}
         self.current_theme = ColorScheme.LIGHT_PROFESSIONAL
         self._setup_default_themes()
+        # tokens property for compatibility
+        self.tokens = self.current_tokens
     
     def apply_theme(self, theme: ColorScheme):
         """Temayı uygula"""
@@ -341,199 +369,227 @@ class MevzuatDesignSystem:
         return self.current_tokens
     
     def generate_css(self, tokens: DesignTokens) -> str:
-        """Design tokens'tan CSS oluştur"""
+        """Design tokens'tan PyQt5 uyumlu CSS oluştur"""
         return f"""
-            /* Mevzuat Design System CSS */
+            /* Mevzuat Design System CSS - PyQt5 Uyumlu */
             
-            /* Root Variables */
-            :root {{
-                --color-primary: {tokens.primary};
-                --color-primary-variant: {tokens.primary_variant};
-                --color-secondary: {tokens.secondary};
-                --color-secondary-variant: {tokens.secondary_variant};
-                
-                --color-success: {tokens.success};
-                --color-warning: {tokens.warning};
-                --color-error: {tokens.error};
-                --color-info: {tokens.info};
-                
-                --color-surface: {tokens.surface};
-                --color-background: {tokens.background};
-                --color-card-background: {tokens.card_background};
-                
-                --color-text-primary: {tokens.text_primary};
-                --color-text-secondary: {tokens.text_secondary};
-                --color-text-disabled: {tokens.text_disabled};
-                --color-text-hint: {tokens.text_hint};
-                
-                --color-border-light: {tokens.border_light};
-                --color-border-medium: {tokens.border_medium};
-                --color-border-dark: {tokens.border_dark};
-                
-                --spacing-xs: {tokens.spacing_xs}px;
-                --spacing-sm: {tokens.spacing_sm}px;
-                --spacing-md: {tokens.spacing_md}px;
-                --spacing-lg: {tokens.spacing_lg}px;
-                --spacing-xl: {tokens.spacing_xl}px;
-                --spacing-xxl: {tokens.spacing_xxl}px;
-                
-                --border-radius-sm: {tokens.border_radius_sm}px;
-                --border-radius-md: {tokens.border_radius_md}px;
-                --border-radius-lg: {tokens.border_radius_lg}px;
-                --border-radius-xl: {tokens.border_radius_xl}px;
-                
-                --elevation-1: {tokens.elevation_1};
-                --elevation-2: {tokens.elevation_2};
-                --elevation-3: {tokens.elevation_3};
-                --elevation-4: {tokens.elevation_4};
-                
-                --font-family-primary: {tokens.font_family_primary};
-                --font-family-secondary: {tokens.font_family_secondary};
-                --font-family-monospace: {tokens.font_family_monospace};
-                
-                --font-size-caption: {tokens.font_size_caption}px;
-                --font-size-small: {tokens.font_size_small}px;
-                --font-size-body: {tokens.font_size_body}px;
-                --font-size-subtitle: {tokens.font_size_subtitle}px;
-                --font-size-title: {tokens.font_size_title}px;
-                --font-size-headline: {tokens.font_size_headline}px;
-                
-                --font-weight-light: {tokens.font_weight_light};
-                --font-weight-normal: {tokens.font_weight_normal};
-                --font-weight-medium: {tokens.font_weight_medium};
-                --font-weight-semibold: {tokens.font_weight_semibold};
-                --font-weight-bold: {tokens.font_weight_bold};
-                
-                --animation-fast: {tokens.animation_fast}ms;
-                --animation-normal: {tokens.animation_normal}ms;
-                --animation-slow: {tokens.animation_slow}ms;
-                
-                --z-dropdown: {tokens.z_dropdown};
-                --z-modal: {tokens.z_modal};
-                --z-tooltip: {tokens.z_tooltip};
-            }}
-            
-            /* Base Styles */
+            /* Base Widget Styles */
             QWidget {{
-                background-color: var(--color-background);
-                color: var(--color-text-primary);
-                font-family: var(--font-family-primary);
-                font-size: var(--font-size-body);
+                background-color: {tokens.background};
+                color: {tokens.text_primary};
+                font-family: "{tokens.font_family_primary}";
+                font-size: {tokens.font_size_body}px;
             }}
             
-            /* Modern Button Styles */
-            .ModernButton {{
-                background-color: var(--color-primary);
+            /* Button Styles */
+            QPushButton {{
+                background-color: {tokens.primary};
                 color: white;
                 border: none;
-                border-radius: var(--border-radius-md);
-                padding: var(--spacing-sm) var(--spacing-md);
-                font-weight: var(--font-weight-medium);
-                font-size: var(--font-size-body);
+                border-radius: {tokens.border_radius_md}px;
+                padding: {tokens.spacing_sm}px {tokens.spacing_md}px;
+                font-weight: 500;
+                font-size: {tokens.font_size_body}px;
                 min-height: 36px;
             }}
             
-            .ModernButton:hover {{
-                background-color: var(--color-primary-variant);
+            QPushButton:hover {{
+                background-color: {tokens.primary_variant};
             }}
             
-            .ModernButton:pressed {{
-                background-color: var(--color-primary-variant);
+            QPushButton:pressed {{
+                background-color: {tokens.primary_variant};
             }}
             
-            .ModernButton:disabled {{
-                background-color: var(--color-text-disabled);
-                color: var(--color-text-hint);
+            QPushButton:disabled {{
+                background-color: {tokens.text_disabled};
+                color: {tokens.text_hint};
             }}
             
-            /* Modern Card Styles */
-            .ModernCard {{
-                background-color: var(--color-card-background);
-                border: 1px solid var(--color-border-light);
-                border-radius: var(--border-radius-lg);
-                box-shadow: var(--elevation-1);
-                padding: var(--spacing-md);
-                margin: var(--spacing-sm);
+            /* Input Styles */
+            QLineEdit, QTextEdit, QSpinBox, QComboBox {{
+                background-color: {tokens.surface};
+                border: 2px solid {tokens.border_light};
+                border-radius: {tokens.border_radius_md}px;
+                padding: {tokens.spacing_sm}px {tokens.spacing_md}px;
+                font-size: {tokens.font_size_body}px;
+                min-height: 24px;
             }}
             
-            .ModernCard:hover {{
-                box-shadow: var(--elevation-2);
-                border-color: var(--color-border-medium);
+            QLineEdit:focus, QTextEdit:focus {{
+                border-color: {tokens.primary};
             }}
             
-            /* Smart Input Styles */
-            .SmartInput {{
-                background-color: var(--color-surface);
-                border: 2px solid var(--color-border-light);
-                border-radius: var(--border-radius-md);
-                padding: var(--spacing-sm) var(--spacing-md);
-                font-size: var(--font-size-body);
-                min-height: 40px;
+            QLineEdit:hover, QTextEdit:hover {{
+                border-color: {tokens.border_medium};
             }}
             
-            .SmartInput:focus {{
-                border-color: var(--color-primary);
-                outline: none;
-                box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+            /* Card Style Frames */
+            QFrame {{
+                background-color: {tokens.surface};
+                border: 1px solid {tokens.border_light};
+                border-radius: {tokens.border_radius_lg}px;
+                padding: {tokens.spacing_md}px;
+                margin: {tokens.spacing_sm}px;
             }}
             
-            .SmartInput:hover {{
-                border-color: var(--color-border-medium);
+            /* List Widget */
+            QListWidget {{
+                background-color: {tokens.surface};
+                border: 1px solid {tokens.border_light};
+                border-radius: {tokens.border_radius_md}px;
+                padding: {tokens.spacing_xs}px;
             }}
             
-            /* Responsive Grid */
-            .ResponsiveGrid {{
-                display: grid;
-                gap: var(--spacing-md);
-                padding: var(--spacing-md);
+            QListWidget::item {{
+                padding: {tokens.spacing_sm}px;
+                border-radius: {tokens.border_radius_sm}px;
+                margin: 2px;
             }}
             
-            /* Mobile Styles */
-            @media (max-width: 768px) {{
-                .ResponsiveGrid {{
-                    grid-template-columns: 1fr;
-                    padding: var(--spacing-sm);
-                    gap: var(--spacing-sm);
-                }}
+            QListWidget::item:selected {{
+                background-color: {tokens.primary};
+                color: white;
             }}
             
-            /* Tablet Styles */
-            @media (min-width: 769px) and (max-width: 1024px) {{
-                .ResponsiveGrid {{
-                    grid-template-columns: repeat(2, 1fr);
-                }}
+            QListWidget::item:hover {{
+                background-color: {tokens.border_light};
             }}
             
-            /* Desktop Styles */
-            @media (min-width: 1025px) {{
-                .ResponsiveGrid {{
-                    grid-template-columns: repeat(3, 1fr);
-                }}
+            /* Tab Widget */
+            QTabWidget::pane {{
+                border: 1px solid {tokens.border_light};
+                background-color: {tokens.surface};
+                border-radius: {tokens.border_radius_md}px;
             }}
             
-            /* Animation Classes */
-            .fade-in {{
-                animation: fadeIn var(--animation-normal) ease-in-out;
+            QTabBar::tab {{
+                background-color: {tokens.background};
+                color: {tokens.text_secondary};
+                border: 1px solid {tokens.border_light};
+                padding: {tokens.spacing_sm}px {tokens.spacing_md}px;
+                margin: 2px;
+                border-radius: {tokens.border_radius_sm}px;
             }}
             
-            .slide-up {{
-                animation: slideUp var(--animation-normal) ease-out;
+            QTabBar::tab:selected {{
+                background-color: {tokens.primary};
+                color: white;
             }}
             
-            @keyframes fadeIn {{
-                from {{ opacity: 0; }}
-                to {{ opacity: 1; }}
+            QTabBar::tab:hover {{
+                background-color: {tokens.border_medium};
             }}
             
-            @keyframes slideUp {{
-                from {{ 
-                    opacity: 0;
-                }}
-                to {{ 
-                    opacity: 1;
-                }}
+            /* Menu Styles */
+            QMenuBar {{
+                background-color: {tokens.surface};
+                color: {tokens.text_primary};
+                border-bottom: 1px solid {tokens.border_light};
+            }}
+            
+            QMenuBar::item {{
+                padding: {tokens.spacing_sm}px {tokens.spacing_md}px;
+                background-color: transparent;
+            }}
+            
+            QMenuBar::item:selected {{
+                background-color: {tokens.primary};
+                color: white;
+            }}
+            
+            QMenu {{
+                background-color: {tokens.surface};
+                color: {tokens.text_primary};
+                border: 1px solid {tokens.border_light};
+                border-radius: {tokens.border_radius_sm}px;
+                padding: {tokens.spacing_xs}px;
+            }}
+            
+            QMenu::item {{
+                padding: {tokens.spacing_sm}px {tokens.spacing_md}px;
+                border-radius: {tokens.border_radius_sm}px;
+                margin: 1px;
+            }}
+            
+            QMenu::item:selected {{
+                background-color: {tokens.primary};
+                color: white;
+            }}
+            
+            /* Progress Bar */
+            QProgressBar {{
+                background-color: {tokens.border_light};
+                border: none;
+                border-radius: {tokens.border_radius_sm}px;
+                text-align: center;
+                height: 24px;
+            }}
+            
+            QProgressBar::chunk {{
+                background-color: {tokens.primary};
+                border-radius: {tokens.border_radius_sm}px;
+            }}
+            
+            /* Scroll Bar */
+            QScrollBar:vertical {{
+                background-color: {tokens.background};
+                width: 12px;
+                border-radius: 6px;
+            }}
+            
+            QScrollBar::handle:vertical {{
+                background-color: {tokens.border_medium};
+                border-radius: 6px;
+                min-height: 20px;
+            }}
+            
+            QScrollBar::handle:vertical:hover {{
+                background-color: {tokens.border_dark};
+            }}
+            
+            /* Status Bar */
+            QStatusBar {{
+                background-color: {tokens.surface};
+                color: {tokens.text_secondary};
+                border-top: 1px solid {tokens.border_light};
+                padding: {tokens.spacing_xs}px;
             }}
         """
+    
+    def get_text_styles(self, variant: str = 'body') -> str:
+        """Basit metin stilleri"""
+        tokens = self.current_tokens
+        
+        style_map = {
+            'headline': f"font-size: {tokens.font_size_headline}px; font-weight: 700; color: {tokens.text_primary};",
+            'title': f"font-size: {tokens.font_size_title}px; font-weight: 600; color: {tokens.text_primary};",
+            'subtitle': f"font-size: {tokens.font_size_subtitle}px; font-weight: 500; color: {tokens.text_primary};",
+            'body': f"font-size: {tokens.font_size_body}px; font-weight: 400; color: {tokens.text_primary};",
+            'body1': f"font-size: {tokens.font_size_body}px; font-weight: 400; color: {tokens.text_primary};",
+            'body2': f"font-size: {tokens.font_size_small}px; font-weight: 400; color: {tokens.text_secondary};",
+            'caption': f"font-size: {tokens.font_size_caption}px; font-weight: 400; color: {tokens.text_secondary};",
+            'button': f"font-size: {tokens.font_size_body}px; font-weight: 500; color: {tokens.text_primary};"
+        }
+        
+        return style_map.get(variant, style_map['body'])
+
+    def create_custom_theme(self, base_scheme: ColorScheme, overrides: Dict[str, str]) -> DesignTokens:
+        """Özel tema oluştur"""
+        base_tokens = self.themes.get(base_scheme, self.themes[ColorScheme.LIGHT_PROFESSIONAL])
+        custom_tokens = DesignTokens()
+        
+        # Base tokens'ı kopyala
+        for field_name in base_tokens.__dataclass_fields__:
+            if hasattr(base_tokens, field_name):
+                setattr(custom_tokens, field_name, getattr(base_tokens, field_name))
+        
+        # Override'ları uygula
+        for key, value in overrides.items():
+            if hasattr(custom_tokens, key):
+                setattr(custom_tokens, key, value)
+        
+        return custom_tokens
 
 
 class ThemeManager(QObject):

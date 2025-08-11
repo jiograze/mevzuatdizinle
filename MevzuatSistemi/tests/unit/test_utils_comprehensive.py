@@ -15,7 +15,7 @@ from pathlib import Path
 
 from app.utils.config_manager import ConfigManager
 from app.utils.logger import setup_logger, get_logger
-from app.utils.file_watcher import FileWatcher
+from app.core.file_watcher import FileWatcher
 from app.utils.text_processor import TextProcessor
 
 
@@ -46,26 +46,26 @@ class TestConfigManagerComprehensive(unittest.TestCase):
         mock_yaml_load.return_value = self.test_config
         
         config_manager = ConfigManager('test_config.yaml')
-        self.assertEqual(config_manager.config, self.test_config)
+        self.assertEqual(config_manager.config_data, self.test_config)
     
     @patch('builtins.open', side_effect=FileNotFoundError)
     def test_load_config_file_not_found(self, mock_file):
         """Config dosyası bulunamadığında test"""
         config_manager = ConfigManager('nonexistent.yaml')
-        self.assertEqual(config_manager.config, {})
+        self.assertEqual(config_manager.config_data, {})
     
     @patch('builtins.open', new_callable=mock_open)
     @patch('yaml.safe_load', side_effect=yaml.YAMLError)
     def test_load_config_yaml_error(self, mock_yaml_load, mock_file):
         """YAML parse hatası testi"""
         config_manager = ConfigManager('invalid.yaml')
-        self.assertEqual(config_manager.config, {})
+        self.assertEqual(config_manager.config_data, {})
     
     def test_get_existing_key(self):
         """Var olan key getirme testi"""
         with patch.object(ConfigManager, '_load_config'):
             config_manager = ConfigManager('test.yaml')
-            config_manager.config = self.test_config
+            config_manager.config_data = self.test_config
             
             result = config_manager.get('database.path')
             self.assertEqual(result, 'test.db')
@@ -74,7 +74,7 @@ class TestConfigManagerComprehensive(unittest.TestCase):
         """İçiçe key getirme testi"""
         with patch.object(ConfigManager, '_load_config'):
             config_manager = ConfigManager('test.yaml')
-            config_manager.config = self.test_config
+            config_manager.config_data = self.test_config
             
             result = config_manager.get('search.max_results')
             self.assertEqual(result, 100)
@@ -83,7 +83,7 @@ class TestConfigManagerComprehensive(unittest.TestCase):
         """Var olmayan key ile default değer testi"""
         with patch.object(ConfigManager, '_load_config'):
             config_manager = ConfigManager('test.yaml')
-            config_manager.config = self.test_config
+            config_manager.config_data = self.test_config
             
             result = config_manager.get('nonexistent.key', 'default_value')
             self.assertEqual(result, 'default_value')
@@ -92,7 +92,7 @@ class TestConfigManagerComprehensive(unittest.TestCase):
         """Var olmayan key default olmadan testi"""
         with patch.object(ConfigManager, '_load_config'):
             config_manager = ConfigManager('test.yaml')
-            config_manager.config = self.test_config
+            config_manager.config_data = self.test_config
             
             result = config_manager.get('nonexistent.key')
             self.assertIsNone(result)
@@ -101,7 +101,7 @@ class TestConfigManagerComprehensive(unittest.TestCase):
         """Yeni key ekleme testi"""
         with patch.object(ConfigManager, '_load_config'):
             config_manager = ConfigManager('test.yaml')
-            config_manager.config = self.test_config
+            config_manager.config_data = self.test_config
             
             config_manager.set('new.key', 'new_value')
             self.assertEqual(config_manager.get('new.key'), 'new_value')
@@ -110,7 +110,7 @@ class TestConfigManagerComprehensive(unittest.TestCase):
         """Var olan key güncelleme testi"""
         with patch.object(ConfigManager, '_load_config'):
             config_manager = ConfigManager('test.yaml')
-            config_manager.config = self.test_config
+            config_manager.config_data = self.test_config
             
             config_manager.set('database.timeout', 60)
             self.assertEqual(config_manager.get('database.timeout'), 60)
@@ -121,7 +121,7 @@ class TestConfigManagerComprehensive(unittest.TestCase):
         """Config kaydetme testi"""
         with patch.object(ConfigManager, '_load_config'):
             config_manager = ConfigManager('test.yaml')
-            config_manager.config = self.test_config
+            config_manager.config_data = self.test_config
             
             result = config_manager.save()
             self.assertTrue(result)
@@ -131,7 +131,7 @@ class TestConfigManagerComprehensive(unittest.TestCase):
         """Config yapısı validasyon testi"""
         with patch.object(ConfigManager, '_load_config'):
             config_manager = ConfigManager('test.yaml')
-            config_manager.config = self.test_config
+            config_manager.config_data = self.test_config
             
             is_valid = config_manager.validate_structure()
             self.assertTrue(is_valid)
@@ -140,7 +140,7 @@ class TestConfigManagerComprehensive(unittest.TestCase):
         """Tüm key'leri getirme testi"""
         with patch.object(ConfigManager, '_load_config'):
             config_manager = ConfigManager('test.yaml')
-            config_manager.config = self.test_config
+            config_manager.config_data = self.test_config
             
             keys = config_manager.get_all_keys()
             self.assertIsInstance(keys, list)

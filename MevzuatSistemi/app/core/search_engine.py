@@ -1,12 +1,28 @@
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
+
+try:
+    import faiss
+    FAISS_AVAILABLE = True
+except ImportError:
+    FAISS_AVAILABLE = False
+
+
 """
 Arama motoru - FTS ve semantik arama kombinasyonu
 """
 
 import time
 import logging
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from app.utils.query_expansion import TurkishLegalQueryExpansion, LegalQueryOptimizer
+from app.utils.faceted_search import LegalDocumentFacetEngine, FacetedResults
+from ..utils.logger import TimedOperation, log_performance_metric
 
 try:
     import numpy as np
@@ -27,31 +43,15 @@ except ImportError as e:
     print(f"Warning: sentence_transformers not available: {e}")
     SENTENCE_TRANSFORMERS_AVAILABLE = False
 
-try:
-    import faiss
-    print("faiss imported successfully")
-    FAISS_AVAILABLE = True
-except ImportError as e:
-    print(f"Warning: faiss not available: {e}")
-    FAISS_AVAILABLE = False
+
 
 # Overall embedding availability
 EMBEDDING_AVAILABLE = NUMPY_AVAILABLE and SENTENCE_TRANSFORMERS_AVAILABLE and FAISS_AVAILABLE
 
-from app.utils.query_expansion import TurkishLegalQueryExpansion, LegalQueryOptimizer
-from app.utils.faceted_search import LegalDocumentFacetEngine, FacetedResults
-from ..utils.logger import TimedOperation, log_performance_metric
 
 @dataclass
 class SearchResult:
-    """Arama sonucu veri yapısı"""
-    id: int
-    document_id: int
-    article_number: str
-    title: str
-    content: str
-    document_title: str
-    law_number: str
+
     document_type: str
     is_repealed: bool
     is_amended: bool
@@ -71,39 +71,31 @@ class SearchEngine:
     """
     
     def __init__(self, config_manager, database_manager):
+        import threading
         self.config = config_manager
         self.db = database_manager
         self.logger = logging.getLogger(self.__class__.__name__)
-        
         # Arama ayarları
         self.semantic_enabled = config_manager.get('search.semantic_enabled', True)
         self.max_results = config_manager.get('search.max_results', 20)
         self.semantic_weight = config_manager.get('search.semantic_weight', 0.4)
         self.keyword_weight = config_manager.get('search.keyword_weight', 0.6)
-        
         # Query expansion engine
         self.query_expansion = TurkishLegalQueryExpansion(config_manager)
         self.query_optimizer = LegalQueryOptimizer(self.query_expansion)
-        
         # Faceted search engine
         self.facet_engine = LegalDocumentFacetEngine(database_manager, config_manager)
-        
         # Embedding modeli ve indeks
         self.embedding_model: Optional[Any] = None  # SentenceTransformer when available
         self.faiss_index: Optional[Any] = None  # faiss.Index when available
         self.article_id_map: Dict[int, int] = {}  # FAISS index -> article_id
-        
-        # Arama önbelleği
+        # Arama önbelleği (thread-safe)
+        self._cache_lock = threading.RLock()
         self.search_cache: Dict[str, List[SearchResult]] = {}
-        
-        # Cache
-        self.search_cache = {}
         self.cache_size = config_manager.get('search.cache_size', 100)
-        
         # Performans ayarları
         self.use_threading = config_manager.get('performance.threading.use_process_pool', False)
         self.max_workers = config_manager.get('performance.threading.max_worker_threads', 2)
-        
         self._initialize_embedding()
     
     def _initialize_embedding(self):
@@ -178,31 +170,19 @@ class SearchEngine:
               search_type: str = 'mixed', include_repealed: bool = False) -> List[SearchResult]:
         """
         Ana arama fonksiyonu - Query expansion ile gelişmiş arama
-        
-        Args:
-            query: Arama sorgusu
-            document_types: Filtrelenecek belge türleri ['KANUN', 'TÜZÜK', ...]
-            search_type: 'keyword', 'semantic', 'mixed'
-            include_repealed: Mülga maddeleri dahil et
-            
-        Returns:
-            Arama sonuçları listesi
         """
         start_time = time.time()
-        
         try:
-            # Cache kontrolü
+            # Cache kontrolü (thread-safe)
             cache_key = self._generate_cache_key(query, document_types, search_type, include_repealed)
-            if cache_key in self.search_cache:
-                cached_results = self.search_cache[cache_key]
-                log_performance_metric("search_cache_hit", 0, {"query": query[:50]})
-                return cached_results
-            
+            with self._cache_lock:
+                if cache_key in self.search_cache:
+                    cached_results = self.search_cache[cache_key]
+                    log_performance_metric("search_cache_hit", 0, {"query": query[:50]})
+                    return cached_results
             # Query expansion ve optimizasyon
             optimized_params = self.query_optimizer.optimize_for_search(query, search_type)
-            
             results = []
-            
             # Arama türüne göre işlem
             if search_type == 'keyword':
                 results = self._keyword_search_enhanced(
@@ -221,33 +201,27 @@ class SearchEngine:
             else:
                 # Fallback: keyword search
                 results = self._keyword_search(query, document_types, include_repealed)
-            
             # Sonuçları skoruna göre sırala
             results.sort(key=lambda x: x.score, reverse=True)
-            
             # Limit uygula
             results = results[:self.max_results]
-            
             # Cache'e ekle
             self._add_to_cache(cache_key, results)
-            
             # Arama geçmişine ekle
             execution_time = (time.time() - start_time) * 1000
             self.db.add_search_to_history(query, search_type, len(results), execution_time)
-            
             # Performance log
             log_performance_metric("search_total", execution_time, {
                 "query": query[:50],
                 "type": search_type,
                 "results": len(results)
             })
-            
             self.logger.info(f"Arama tamamlandı: '{query}' -> {len(results)} sonuç ({execution_time:.1f}ms)")
             return results
-            
         except Exception as e:
-            self.logger.error(f"Arama hatası: {e}")
-            return []
+            # Hata detayını logla, kullanıcıya özel bilgi gösterme
+            self.logger.error(f"Arama sırasında beklenmeyen bir hata oluştu: {type(e).__name__}: {e}", exc_info=True)
+            raise
     
     def _keyword_search(self, query: str, document_types: List[str] = None, 
                        include_repealed: bool = False) -> List[SearchResult]:
@@ -470,7 +444,7 @@ class SearchEngine:
                 # Highlight ekle
                 highlighted = re.sub(
                     pattern, 
-                    rf'<mark>\g<0></mark>', 
+                    r'<mark>\g<0></mark>', 
                     snippet, 
                     flags=re.IGNORECASE
                 )
@@ -510,29 +484,30 @@ class SearchEngine:
         row = cursor.fetchone()
         cursor.close()
         
-        if row:
-            columns = [desc[0] for desc in cursor.description]
-            return dict(zip(columns, row))
-        return None
-    
-    def _generate_cache_key(self, query: str, document_types: List[str], 
-                           search_type: str, include_repealed: bool) -> str:
-        """Cache anahtarı oluştur"""
-        import hashlib
-        
-        key_data = f"{query}_{document_types}_{search_type}_{include_repealed}"
-        return hashlib.md5(key_data.encode()).hexdigest()[:16]
-    
-    def _add_to_cache(self, key: str, results: List[SearchResult]):
-        """Sonuçları cache'e ekle"""
-        if len(self.search_cache) >= self.cache_size:
-            # En eski öğeyi sil (basit FIFO)
-            oldest_key = next(iter(self.search_cache))
-            del self.search_cache[oldest_key]
-        
-        self.search_cache[key] = results.copy()
-    
-    def add_article_to_index(self, article_id: int, content: str):
+        """
+        Arama motoru - FTS ve semantik arama kombinasyonu
+        """
+
+        import time
+        import logging
+        from typing import List, Dict, Any, Optional
+        from dataclasses import dataclass
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        from app.utils.query_expansion import TurkishLegalQueryExpansion, LegalQueryOptimizer
+        from app.utils.faceted_search import LegalDocumentFacetEngine, FacetedResults
+        from ..utils.logger import TimedOperation, log_performance_metric
+
+        try:
+            import numpy as np
+            NUMPY_AVAILABLE = True
+        except ImportError:
+            NUMPY_AVAILABLE = False
+
+        try:
+            import faiss
+            FAISS_AVAILABLE = True
+        except ImportError:
+            FAISS_AVAILABLE = False
         """Yeni article'ı indekse ekle"""
         if not self.semantic_enabled or not self.embedding_model:
             return
@@ -1150,3 +1125,70 @@ class SearchEngine:
             Import edilen facet filtreleri
         """
         return self.facet_engine.import_facet_state(export_data)
+
+
+class HybridSearchEngine(SearchEngine):
+    """
+    Hibrit arama motoru - FTS ve semantik arama kombinasyonu
+    SearchEngine sınıfının alias'ı olarak çalışır
+    """
+    
+    def __init__(self, db_manager, config_manager=None):
+        """
+        Hibrit arama motoru başlatıcı
+        
+        Args:
+            db_manager: Veritabanı yöneticisi
+            config_manager: Konfigürasyon yöneticisi
+        """
+        super().__init__(db_manager, config_manager)
+        self.logger.info("HybridSearchEngine initialized")
+    
+    def hybrid_search(self, query: str, search_type: str = "all", 
+                     limit: int = 50, **kwargs) -> List[SearchResult]:
+        """
+        Hibrit arama fonksiyonu - hem FTS hem semantik arama
+        
+        Args:
+            query: Arama sorgusu
+            search_type: Arama tipi
+            limit: Sonuç limiti
+            **kwargs: Ek parametreler
+            
+        Returns:
+            Hibrit arama sonuçları
+        """
+        # Ana search metodunu kullan
+        return self.search(query, search_type=search_type, limit=limit)
+    
+    def get_semantic_similarity(self, query: str, document_text: str) -> float:
+        """
+        İki metin arasındaki semantik benzerliği hesapla
+        
+        Args:
+            query: Sorgu metni
+            document_text: Doküman metni
+            
+        Returns:
+            Benzerlik skoru (0.0-1.0 arası)
+        """
+        try:
+            if EMBEDDING_AVAILABLE:
+                # Gelecekteki implementasyon için placeholder
+                return 0.5
+            else:
+                # Basit kelime tabanlı benzerlik
+                query_words = set(query.lower().split())
+                doc_words = set(document_text.lower().split())
+                
+                if not query_words or not doc_words:
+                    return 0.0
+                    
+                intersection = query_words.intersection(doc_words)
+                union = query_words.union(doc_words)
+                
+                return len(intersection) / len(union) if union else 0.0
+                
+        except Exception as e:
+            self.logger.error(f"Semantic similarity error: {e}")
+            return 0.0
