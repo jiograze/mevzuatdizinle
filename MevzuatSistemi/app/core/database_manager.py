@@ -317,11 +317,23 @@ class DatabaseManager:
         document_data.setdefault('version_number', 1)
         
         with self.transaction() as cursor:
-            placeholders = ', '.join(['?' for _ in document_data])
-            columns = ', '.join(document_data.keys())
+            # Validate column names to prevent SQL injection
+            valid_columns = ['title', 'law_number', 'document_type', 'category', 'subcategory', 
+                           'original_filename', 'stored_filename', 'file_path', 'file_hash', 
+                           'file_size', 'created_at', 'updated_at', 'effective_date', 
+                           'publication_date', 'status', 'version_number', 'parent_document_id', 'metadata']
+            
+            # Filter to only allow valid columns
+            safe_document_data = {k: v for k, v in document_data.items() if k in valid_columns}
+            
+            if not safe_document_data:
+                raise ValueError("No valid columns found in document data")
+            
+            placeholders = ', '.join(['?' for _ in safe_document_data])
+            columns = ', '.join(safe_document_data.keys())
             
             query = f"INSERT INTO documents ({columns}) VALUES ({placeholders})"
-            cursor.execute(query, list(document_data.values()))
+            cursor.execute(query, list(safe_document_data.values()))
             
             doc_id = cursor.lastrowid
             self.logger.info(f"Belge eklendi: {doc_id}")
@@ -335,11 +347,21 @@ class DatabaseManager:
         article_data.setdefault('created_at', datetime.now().isoformat())
         
         with self.transaction() as cursor:
-            placeholders = ', '.join(['?' for _ in article_data])
-            columns = ', '.join(article_data.keys())
+            # Validate column names to prevent SQL injection
+            valid_columns = ['document_id', 'article_number', 'title', 'content', 'content_clean', 
+                           'seq_index', 'article_type', 'is_repealed', 'is_amended', 'created_at']
+            
+            # Filter to only allow valid columns
+            safe_article_data = {k: v for k, v in article_data.items() if k in valid_columns}
+            
+            if not safe_article_data:
+                raise ValueError("No valid columns found in article data")
+            
+            placeholders = ', '.join(['?' for _ in safe_article_data])
+            columns = ', '.join(safe_article_data.keys())
             
             query = f"INSERT INTO articles ({columns}) VALUES ({placeholders})"
-            cursor.execute(query, list(article_data.values()))
+            cursor.execute(query, list(safe_article_data.values()))
             
             article_id = cursor.lastrowid
             
@@ -963,8 +985,14 @@ class DatabaseManager:
             )
     
     def __del__(self):
-        """Nesne yok edilirken bağlantıyı kapat"""
-        try:
-            self.close()
-        except:
-            pass
+        """Nesne yok edilirken bağlantıyı kapat - Deprecated, use explicit close()"""
+        # Note: __del__ is unreliable, always call close() explicitly
+        pass
+    
+    def __enter__(self):
+        """Context manager entry"""
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - ensures proper cleanup"""
+        self.close()

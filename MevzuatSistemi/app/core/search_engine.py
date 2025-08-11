@@ -604,6 +604,11 @@ class SearchEngine:
             return []
         
         try:
+            # Check if database connection exists
+            if not self.db or not self.db.connection:
+                self.logger.warning("Database connection not available for search suggestions")
+                return []
+            
             # Son aramalardan öneriler
             recent_searches = self.db.get_search_history(limit=50)
             
@@ -634,7 +639,22 @@ class SearchEngine:
     def get_performance_stats(self) -> Dict[str, Any]:
         """Performans istatistikleri"""
         try:
+            # Check if database connection exists
+            if not self.db or not self.db.connection:
+                self.logger.warning("Database connection not available for performance stats")
+                return self._get_default_performance_stats()
+            
             cursor = self.db.connection.cursor()
+            
+            # Check if search_history table exists
+            cursor.execute("""
+                SELECT name FROM sqlite_master 
+                WHERE type='table' AND name='search_history'
+            """)
+            if not cursor.fetchone():
+                self.logger.warning("search_history table not found")
+                cursor.close()
+                return self._get_default_performance_stats()
             
             # Toplam arama sayısı
             cursor.execute("SELECT COUNT(*) FROM search_history")
@@ -673,16 +693,20 @@ class SearchEngine:
             
         except Exception as e:
             self.logger.error(f"Performans istatistikleri alınamadı: {e}")
-            return {
-                'total_searches': 0,
-                'average_execution_time_ms': 0,
-                'min_execution_time_ms': 0,
-                'max_execution_time_ms': 0,
-                'search_type_counts': {},
-                'faiss_index_size': 0,
-                'semantic_enabled': self.semantic_enabled,
-                'cache_size': 0
-            }
+            return self._get_default_performance_stats()
+    
+    def _get_default_performance_stats(self) -> Dict[str, Any]:
+        """Default performance stats when database is unavailable"""
+        return {
+            'total_searches': 0,
+            'average_execution_time_ms': 0,
+            'min_execution_time_ms': 0,
+            'max_execution_time_ms': 0,
+            'search_type_counts': {},
+            'faiss_index_size': self.faiss_index.ntotal if self.faiss_index else 0,
+            'semantic_enabled': self.semantic_enabled,
+            'cache_size': len(self.search_cache) if hasattr(self, 'search_cache') else 0
+        }
     
     def get_suggestions(self, query: str, limit: int = 5) -> List[str]:
         """Son aramalar + popüler terimlerden öneriler döndür.
@@ -695,7 +719,23 @@ class SearchEngine:
             if len(q) < 2:
                 return []
 
+            # Check if database connection exists
+            if not self.db or not self.db.connection:
+                self.logger.warning("Database connection not available for suggestions")
+                return self._get_fallback_suggestions(q, limit)
+
             cursor = self.db.connection.cursor()
+            
+            # Check if search_history table exists
+            cursor.execute("""
+                SELECT name FROM sqlite_master 
+                WHERE type='table' AND name='search_history'
+            """)
+            if not cursor.fetchone():
+                self.logger.warning("search_history table not found for suggestions")
+                cursor.close()
+                return self._get_fallback_suggestions(q, limit)
+            
             cursor.execute(
                 """
                 SELECT DISTINCT query
@@ -710,20 +750,27 @@ class SearchEngine:
             cursor.close()
 
             if len(suggestions) < limit:
-                fallback = [
-                    "vergi kanunu","türk ceza kanunu","medeni kanun","borçlar kanunu",
-                    "iş kanunu","sosyal güvenlik","ticaret kanunu","çevre kanunu","eğitim","sağlık"
-                ]
-                ql = q.lower()
-                for term in fallback:
-                    if ql in term and term not in suggestions:
-                        suggestions.append(term)
-                        if len(suggestions) >= limit:
-                            break
+                suggestions.extend(self._get_fallback_suggestions(q, limit - len(suggestions)))
+            
             return suggestions[:limit]
         except Exception as e:
             self.logger.error(f"Öneri alma hatası: {e}")
-            return []
+            return self._get_fallback_suggestions(q, limit)
+    
+    def _get_fallback_suggestions(self, query: str, limit: int) -> List[str]:
+        """Fallback suggestions when database is unavailable"""
+        fallback = [
+            "vergi kanunu","türk ceza kanunu","medeni kanun","borçlar kanunu",
+            "iş kanunu","sosyal güvenlik","ticaret kanunu","çevre kanunu","eğitim","sağlık"
+        ]
+        ql = query.lower()
+        suggestions = []
+        for term in fallback:
+            if ql in term and term not in suggestions:
+                suggestions.append(term)
+                if len(suggestions) >= limit:
+                    break
+        return suggestions
     
     # ======================== ENHANCED SEARCH METHODS ========================
     
