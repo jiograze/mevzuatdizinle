@@ -303,4 +303,4 @@ Bu proje şu açık kaynak projeleri kullanmaktadır:
 
 **Son Güncelleme**: 2025-08-10  
 **Versiyon**: 1.0.2  
-**Geliştirici**: tk47221
+**Geliştirici**:
