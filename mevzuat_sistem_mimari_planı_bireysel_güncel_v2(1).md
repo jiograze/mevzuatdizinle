@@ -309,7 +309,7 @@ Yeni alanlar:
 # Ana yapılandırma
 base_folder: "{MEVZUAT_FOLDER}"  # Değişken kullanımı - kurulum sırasında doldurulur
 app_version: "1.0.2"
-user_id: "tk47221"  # YENİ: isteğe bağlı kullanıcı kimliği
+user_id: ""  # YENİ: isteğe bağlı kullanıcı kimliği
 creation_date: "2025-08-10 07:47:13"
 
 # İzleme ayarları
